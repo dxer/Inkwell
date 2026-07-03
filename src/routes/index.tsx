@@ -3,9 +3,11 @@ import { createServerFn } from '@tanstack/react-start'
 import { getDb } from '../lib/db'
 import { posts, categories, tags, siteSettings, postsToTags } from '../lib/schema'
 import { eq, desc, count, inArray } from 'drizzle-orm'
-import { FileText } from 'lucide-react'
+import { FileText, ArrowRight } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { SiteLayout } from '@/components/site/site-layout'
 import { useInView } from '@/lib/use-in-view'
+import { categoryColor } from '@/lib/category-color'
 
 type PostSearch = {
   page?: number
@@ -43,6 +45,7 @@ export const getHomeDataFn = createServerFn({ method: 'GET' })
         createdAt: posts.createdAt,
         categoryName: categories.name,
         categorySlug: categories.slug,
+        categoryColor: categories.color,
       })
       .from(posts)
       .leftJoin(categories, eq(posts.categoryId, categories.id))
@@ -139,7 +142,7 @@ function Home() {
         <>
           <div className="flex flex-col divide-y divide-border">
             {posts.map((post, index) => (
-              <HomeArticle key={post.id} post={post} index={index} />
+              <HomeArticle key={post.id} post={post} index={index} isLatest={index === 0 && pagination.page === 1} />
             ))}
           </div>
 
@@ -172,34 +175,49 @@ function Home() {
   )
 }
 
-function HomeArticle({ post, index }: { post: any; index: number }) {
+function HomeArticle({ post, index, isLatest }: { post: any; index: number; isLatest: boolean }) {
   const [ref, inView] = useInView<HTMLDivElement>()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  const catStyle = post.categoryName ? categoryColor(post.categoryColor, isDark) : null
+  const date = new Date(post.createdAt)
+  const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
   return (
     <article
       ref={ref}
-      className={`reveal ${inView ? 'is-visible' : ''} group py-8 first:pt-0`}
+      className={`reveal ${inView ? 'is-visible' : ''} group -mx-3 sm:-mx-4 px-3 sm:px-4 rounded-lg py-8 first:pt-4 transition-colors duration-200 hover:bg-secondary/40`}
       style={{ ['--reveal-index' as string]: Math.min(index, 5) }}
     >
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-3">
-        {post.categoryName && (
+      {/* Meta row: LATEST badge + colored category pill + ISO date */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        {isLatest && (
+          <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: 'hsl(14 53% 50% / 0.14)', color: 'hsl(14 53% 45%)' }}>
+            Latest
+          </span>
+        )}
+        {post.categoryName && catStyle && (
           <Link
             to="/category/$slug"
             params={{ slug: post.categorySlug || '' }}
-            className="text-primary hover:underline font-medium"
+            className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full hover:opacity-80 transition-opacity"
+            style={catStyle}
           >
             {post.categoryName}
           </Link>
         )}
-        {post.categoryName && <span className="text-border">·</span>}
-        <time className="tabular-nums">
-          {new Date(post.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
+        <time className="text-xs text-muted-foreground tabular-nums" dateTime={isoDate}>
+          {isoDate}
         </time>
       </div>
 
       <h2
         className="font-bold leading-tight tracking-tight mb-3"
-        style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-list-title)' }}
+        style={{
+          fontFamily: 'var(--font-serif)',
+          fontSize: isLatest ? 'var(--text-post-title)' : 'var(--text-list-title)',
+        }}
       >
         <Link to="/posts/$slug" params={{ slug: post.slug }} className="hover:text-primary transition-colors">
           {post.title}
@@ -222,20 +240,29 @@ function HomeArticle({ post, index }: { post: any; index: number }) {
         </p>
       )}
 
-      {post.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {post.tags.map((tag: any) => (
-            <Link
-              key={tag.slug}
-              to="/tag/$slug"
-              params={{ slug: tag.slug }}
-              className="text-xs text-muted-foreground hover:text-primary transition-colors"
-            >
-              #{tag.name}
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {post.tags.map((tag: any) => (
+              <Link
+                key={tag.slug}
+                to="/tag/$slug"
+                params={{ slug: tag.slug }}
+                className="text-xs text-muted-foreground hover:text-primary hover:border-primary/40 border border-transparent transition-colors px-2 py-0.5 rounded-full hover:bg-secondary"
+              >
+                #{tag.name}
+              </Link>
+            ))}
+          </div>
+        )}
+        <Link
+          to="/posts/$slug"
+          params={{ slug: post.slug }}
+          className="inline-flex items-center gap-1 text-sm text-primary hover:gap-1.5 transition-all font-medium ml-auto"
+        >
+          继续阅读 <ArrowRight size={14} />
+        </Link>
+      </div>
     </article>
   )
 }
