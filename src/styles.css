@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* Editorial fonts: serif display (Libre Bodoni) for headings, sans (Public Sans) for body/UI */
-@import url('https://fonts.googleapis.com/css2?family=Libre+Bodoni:wght@400;500;600;700&family=Public+Sans:wght@300;400;500;600;700&display=swap');
+/* Editorial fonts: serif display (Libre Bodoni) for headings, sans (Public Sans) for body/UI.
+   Fonts are now loaded via <link> tags in the document head (see __root.tsx) to avoid render-blocking. */
 
 @theme {
   --color-border: hsl(var(--border));
