@@ -3,7 +3,9 @@ import { createServerFn } from '@tanstack/react-start'
 import { getDb } from '../lib/db'
 import { posts, categories, tags, postsToTags, siteSettings } from '../lib/schema'
 import { eq } from 'drizzle-orm'
+import { useTheme } from 'next-themes'
 import { SiteLayout } from '@/components/site/site-layout'
+import { categoryColor } from '@/lib/category-color'
 
 export const getPostFn = createServerFn({ method: 'GET' })
   .validator((data: { slug: string }) => data)
@@ -24,6 +26,7 @@ export const getPostFn = createServerFn({ method: 'GET' })
         status: posts.status,
         categoryName: categories.name,
         categorySlug: categories.slug,
+        categoryColor: categories.color,
       })
       .from(posts)
       .leftJoin(categories, eq(posts.categoryId, categories.id))
@@ -83,34 +86,38 @@ export const Route = createFileRoute('/posts/$slug')({
 
 function PostDetail() {
   const { post, tags, settings } = Route.useLoaderData() as { post: any; tags: any[]; settings: Record<string, string> }
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  const catStyle = post.categoryName ? categoryColor(post.categoryColor, isDark) : null
+  const date = new Date(post.createdAt)
+  const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
   return (
     <SiteLayout settings={settings} width="reading">
       <article>
         <header className="mb-10">
-          {post.categoryName && (
-            <Link
-              to="/category/$slug"
-              params={{ slug: post.categorySlug || '' }}
-              className="text-xs uppercase tracking-widest text-primary hover:underline font-semibold"
-            >
-              {post.categoryName}
-            </Link>
-          )}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {post.categoryName && catStyle && (
+              <Link
+                to="/category/$slug"
+                params={{ slug: post.categorySlug || '' }}
+                className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full hover:opacity-80 transition-opacity"
+                style={catStyle}
+              >
+                {post.categoryName}
+              </Link>
+            )}
+            <time className="text-xs text-muted-foreground tabular-nums" dateTime={isoDate}>
+              {isoDate}
+            </time>
+          </div>
 
           <h1
-            className="font-bold mt-4 mb-4 tracking-tight leading-tight"
+            className="font-bold mb-4 tracking-tight leading-tight"
             style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-post-title)' }}
           >
             {post.title}
           </h1>
-
-          <div className="text-sm text-muted-foreground flex items-center gap-2">
-            <span>发布于</span>
-            <time className="tabular-nums">
-              {new Date(post.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
-            </time>
-          </div>
         </header>
 
         {post.coverImage && (
