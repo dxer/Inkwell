@@ -3,6 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { Toaster } from '@/components/ui/sonner'
+import { ThemeProvider } from '@/components/theme-provider'
 import { getDb } from '../lib/db'
 import { siteSettings } from '../lib/schema'
 import appCss from '../styles.css?url'
@@ -119,10 +120,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         />
       </head>
       <body className="antialiased min-h-screen flex flex-col bg-background text-foreground">
-        <div className="flex-1 flex flex-col">
-          {children}
-        </div>
-        <Toaster richColors position="top-center" />
+        <ThemeProvider>
+          <div className="flex-1 flex flex-col">
+            {children}
+          </div>
+          <Toaster richColors position="top-center" />
+        </ThemeProvider>
         <TanStackDevtools
           config={{
             position: 'bottom-right',
