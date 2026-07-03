@@ -3,8 +3,10 @@ import { createServerFn } from '@tanstack/react-start'
 import { getDb } from '../lib/db'
 import { posts, categories, tags, postsToTags, siteSettings } from '../lib/schema'
 import { eq, and, desc, count, inArray } from 'drizzle-orm'
+import { useTheme } from 'next-themes'
 import { SiteLayout } from '@/components/site/site-layout'
 import { useInView } from '@/lib/use-in-view'
+import { categoryColor } from '@/lib/category-color'
 
 type TagSearch = {
   page?: number
@@ -56,6 +58,7 @@ export const getTagPostsFn = createServerFn({ method: 'GET' })
         createdAt: posts.createdAt,
         categoryName: categories.name,
         categorySlug: categories.slug,
+        categoryColor: categories.color,
       })
       .from(posts)
       .innerJoin(postsToTags, eq(posts.id, postsToTags.postId))
@@ -194,6 +197,11 @@ function TagPage() {
 
 function ArchiveCard({ post, activeTagSlug, index }: { post: any; activeTagSlug: string; index: number }) {
   const [ref, inView] = useInView<HTMLDivElement>()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  const catStyle = post.categoryName ? categoryColor(post.categoryColor, isDark) : null
+  const date = new Date(post.createdAt)
+  const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
   return (
     <article
@@ -208,12 +216,18 @@ function ArchiveCard({ post, activeTagSlug, index }: { post: any; activeTagSlug:
       )}
       <div className="p-6 flex-1 flex flex-col justify-between">
         <div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-3">
-            {post.categoryName && (
-              <span className="text-foreground font-medium bg-secondary px-2 py-0.5 rounded">{post.categoryName}</span>
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            {post.categoryName && catStyle && (
+              <span
+                className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full"
+                style={catStyle}
+              >
+                {post.categoryName}
+              </span>
             )}
-            <span className="text-border">·</span>
-            <time className="tabular-nums">{new Date(post.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
+            <time className="text-xs text-muted-foreground tabular-nums" dateTime={isoDate}>
+              {isoDate}
+            </time>
           </div>
           <h2 className="text-xl font-bold group-hover:text-primary transition-colors mb-2 leading-snug">
             <Link to="/posts/$slug" params={{ slug: post.slug }}>{post.title}</Link>

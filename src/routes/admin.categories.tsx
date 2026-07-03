@@ -169,7 +169,7 @@ function AdminCategories() {
                 <Select value={parentId} onValueChange={setParentId}>
                   <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">(无 — 作为一级分类)</SelectItem>
+                    <SelectItem value="__none__">(无, 作为一级分类)</SelectItem>
                     {parentOptions.map(p => (
                       <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                     ))}

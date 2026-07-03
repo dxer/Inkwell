@@ -63,6 +63,7 @@ export const getCategoryPostsFn = createServerFn({ method: 'GET' })
         createdAt: posts.createdAt,
         categoryName: categories.name,
         categorySlug: categories.slug,
+        categoryColor: categories.color,
       })
       .from(posts)
       .leftJoin(categories, eq(posts.categoryId, categories.id))
@@ -200,6 +201,8 @@ function CategoryPage() {
 
 function ArchiveCard({ post, index }: { post: any; index: number }) {
   const [ref, inView] = useInView<HTMLDivElement>()
+  const date = new Date(post.createdAt)
+  const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
   return (
     <article
@@ -214,9 +217,9 @@ function ArchiveCard({ post, index }: { post: any; index: number }) {
       )}
       <div className="p-6 flex-1 flex flex-col justify-between">
         <div>
-          <div className="text-xs text-muted-foreground mb-3 tabular-nums">
-            {new Date(post.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
-          </div>
+          <time className="block text-xs text-muted-foreground mb-3 tabular-nums" dateTime={isoDate}>
+            {isoDate}
+          </time>
           <h2 className="text-xl font-bold group-hover:text-primary transition-colors mb-2 leading-snug">
             <Link to="/posts/$slug" params={{ slug: post.slug }}>{post.title}</Link>
           </h2>
