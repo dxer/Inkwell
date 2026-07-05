@@ -37,6 +37,7 @@ export const posts = sqliteTable("posts", {
   status: text("status", { enum: ["draft", "published", "trash"] }).default("draft"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }),
+  views: integer("views").default(0).notNull(),
 });
 
 // 5. 文章与标签的多对多中间表

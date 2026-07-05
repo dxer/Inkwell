@@ -3,7 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { getDb } from '../lib/db'
 import { posts, categories, tags, siteSettings, postsToTags } from '../lib/schema'
 import { eq, desc, count, inArray } from 'drizzle-orm'
-import { FileText, ArrowRight } from 'lucide-react'
+import { FileText, ArrowRight, Eye } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { SiteLayout } from '@/components/site/site-layout'
 import { useInView } from '@/lib/use-in-view'
@@ -43,6 +43,7 @@ export const getHomeDataFn = createServerFn({ method: 'GET' })
         description: posts.description,
         coverImage: posts.coverImage,
         createdAt: posts.createdAt,
+        views: posts.views,
         categoryName: categories.name,
         categorySlug: categories.slug,
         categoryColor: categories.color,
@@ -210,6 +211,10 @@ function HomeArticle({ post, index, isLatest }: { post: any; index: number; isLa
         <time className="text-xs text-muted-foreground tabular-nums" dateTime={isoDate}>
           {isoDate}
         </time>
+        <span className="text-xs text-muted-foreground flex items-center gap-1 ml-1.5 tabular-nums">
+          <Eye size={12} strokeWidth={2.5} />
+          {post.views || 0}
+        </span>
       </div>
 
       <h2

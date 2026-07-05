@@ -5,6 +5,9 @@ import { posts, categories, tags, postsToTags, siteSettings } from '../lib/schem
 import { eq, and, desc, count, inArray } from 'drizzle-orm'
 import { SiteLayout } from '@/components/site/site-layout'
 import { useInView } from '@/lib/use-in-view'
+import { useTheme } from 'next-themes'
+import { categoryColor } from '@/lib/category-color'
+import { ArrowRight, Eye, FileText } from 'lucide-react'
 
 type CategorySearch = {
   page?: number
@@ -142,9 +145,9 @@ function CategoryPage() {
   const { category, posts, settings, pagination } = Route.useLoaderData() as {
     category: any; posts: any[]; settings: Record<string, string>; pagination: any
   }
-
+ 
   return (
-    <SiteLayout settings={settings} width="wide">
+    <SiteLayout settings={settings} width="reading">
       <div className="border-b border-border pb-6 mb-10">
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">分类归档</span>
         <h1
@@ -156,39 +159,42 @@ function CategoryPage() {
         <p className="text-xs text-muted-foreground mt-2">共 {pagination.totalPosts} 篇文章</p>
       </div>
 
-      <section className="flex flex-col gap-6">
+      <section className="flex flex-col">
         {posts.length === 0 ? (
-          <div className="text-center py-20 border border-dashed border-border rounded-xl bg-card/50">
-            <p className="text-muted-foreground text-sm">该分类下暂无文章</p>
+          <div className="text-center py-24 border border-dashed border-border rounded-xl bg-card/40">
+            <FileText size={28} className="text-muted-foreground/50 mx-auto" strokeWidth={1.5} />
+            <p className="text-muted-foreground text-sm mt-3">该分类下暂无文章</p>
           </div>
         ) : (
           <>
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col divide-y divide-border">
               {posts.map((post, index) => (
-                <ArchiveCard key={post.id} post={post} index={index} />
+                <ArchiveCard key={post.id} post={post} index={index} isLatest={index === 0 && pagination.page === 1} />
               ))}
             </div>
 
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-border pt-6 mt-4">
+              <div className="flex items-center justify-between pt-4">
                 <Link
                   disabled={pagination.page <= 1}
                   to="/category/$slug"
                   params={{ slug: category.slug }}
                   search={{ page: pagination.page - 1 }}
-                  className={`inline-flex items-center min-h-[44px] px-4 border border-border rounded-md text-sm transition-colors ${pagination.page <= 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-secondary'}`}
+                  className={`inline-flex items-center min-h-[44px] px-3 text-sm transition-colors ${pagination.page <= 1 ? 'opacity-40 cursor-not-allowed' : 'text-primary hover:underline'}`}
                 >
-                  上一页
+                  ← 上一页
                 </Link>
-                <span className="text-sm text-muted-foreground tabular-nums">第 {pagination.page} / {pagination.totalPages} 页</span>
+                <span className="text-sm text-muted-foreground tabular-nums">
+                  {pagination.page} / {pagination.totalPages}
+                </span>
                 <Link
                   disabled={pagination.page >= pagination.totalPages}
                   to="/category/$slug"
                   params={{ slug: category.slug }}
                   search={{ page: pagination.page + 1 }}
-                  className={`inline-flex items-center min-h-[44px] px-4 border border-border rounded-md text-sm transition-colors ${pagination.page >= pagination.totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-secondary'}`}
+                  className={`inline-flex items-center min-h-[44px] px-3 text-sm transition-colors ${pagination.page >= pagination.totalPages ? 'opacity-40 cursor-not-allowed' : 'text-primary hover:underline'}`}
                 >
-                  下一页
+                  下一页 →
                 </Link>
               </div>
             )}
@@ -199,34 +205,76 @@ function CategoryPage() {
   )
 }
 
-function ArchiveCard({ post, index }: { post: any; index: number }) {
+function ArchiveCard({ post, index, isLatest }: { post: any; index: number; isLatest: boolean }) {
   const [ref, inView] = useInView<HTMLDivElement>()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  const catStyle = post.categoryName ? categoryColor(post.categoryColor, isDark) : null
   const date = new Date(post.createdAt)
   const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
   return (
     <article
       ref={ref}
-      className={`reveal ${inView ? 'is-visible' : ''} group bg-card border border-border rounded-lg overflow-hidden hover:border-foreground/20 transition-colors duration-300 flex flex-col md:flex-row`}
+      className={`reveal ${inView ? 'is-visible' : ''} group -mx-3 sm:-mx-4 px-3 sm:px-4 rounded-lg py-8 first:pt-4 transition-colors duration-200 hover:bg-secondary/40`}
       style={{ ['--reveal-index' as string]: Math.min(index, 5) }}
     >
+      {/* Meta row: LATEST badge + colored category pill + ISO date */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        {isLatest && (
+          <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: 'hsl(14 53% 50% / 0.14)', color: 'hsl(14 53% 45%)' }}>
+            Latest
+          </span>
+        )}
+        {post.categoryName && catStyle && (
+          <Link
+            to="/category/$slug"
+            params={{ slug: post.categorySlug || '' }}
+            className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full hover:opacity-80 transition-opacity"
+            style={catStyle}
+          >
+            {post.categoryName}
+          </Link>
+        )}
+        <time className="text-xs text-muted-foreground tabular-nums" dateTime={isoDate}>
+          {isoDate}
+        </time>
+        <span className="text-xs text-muted-foreground flex items-center gap-1 ml-1.5 tabular-nums">
+          <Eye size={12} strokeWidth={2.5} />
+          {post.views || 0}
+        </span>
+      </div>
+
+      <h2
+        className="font-bold leading-tight tracking-tight mb-3"
+        style={{
+          fontFamily: 'var(--font-serif)',
+          fontSize: isLatest ? 'var(--text-post-title)' : 'var(--text-list-title)',
+        }}
+      >
+        <Link to="/posts/$slug" params={{ slug: post.slug }} className="hover:text-primary transition-colors">
+          {post.title}
+        </Link>
+      </h2>
+
       {post.coverImage && (
-        <div className="md:w-1/3 aspect-[16/10] md:aspect-auto overflow-hidden relative border-b md:border-b-0 md:border-r border-border bg-secondary">
-          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
-        </div>
+        <Link to="/posts/$slug" params={{ slug: post.slug }} className="block rounded-lg overflow-hidden border border-border mb-4 bg-secondary">
+          <img
+            src={post.coverImage}
+            alt={post.title}
+            className="w-full aspect-[16/9] object-cover group-hover:scale-[1.01] transition-transform duration-500"
+          />
+        </Link>
       )}
-      <div className="p-6 flex-1 flex flex-col justify-between">
-        <div>
-          <time className="block text-xs text-muted-foreground mb-3 tabular-nums" dateTime={isoDate}>
-            {isoDate}
-          </time>
-          <h2 className="text-xl font-bold group-hover:text-primary transition-colors mb-2 leading-snug">
-            <Link to="/posts/$slug" params={{ slug: post.slug }}>{post.title}</Link>
-          </h2>
-          {post.description && (
-            <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">{post.description}</p>
-          )}
-        </div>
+
+      {post.description && (
+        <p className="text-base text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+          {post.description}
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {post.tags.map((tag: any) => (
@@ -234,13 +282,20 @@ function ArchiveCard({ post, index }: { post: any; index: number }) {
                 key={tag.slug}
                 to="/tag/$slug"
                 params={{ slug: tag.slug }}
-                className="text-xs px-2 py-0.5 rounded-full border text-muted-foreground hover:text-primary border-border transition-colors"
+                className="text-xs text-muted-foreground hover:text-primary hover:border-primary/40 border border-transparent transition-colors px-2 py-0.5 rounded-full hover:bg-secondary"
               >
                 #{tag.name}
               </Link>
             ))}
           </div>
         )}
+        <Link
+          to="/posts/$slug"
+          params={{ slug: post.slug }}
+          className="inline-flex items-center gap-1 text-sm text-primary hover:gap-1.5 transition-all font-medium ml-auto"
+        >
+          继续阅读 <ArrowRight size={14} />
+        </Link>
       </div>
     </article>
   )

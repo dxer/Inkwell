@@ -28,6 +28,20 @@ export function ThemeToggle() {
     window.setTimeout(() => root.classList.remove('theme-transition'), 350)
   }
 
+  // Before mounting, render a completely static button to ensure 100% hydration safety.
+  if (!mounted) {
+    return (
+      <button
+        type="button"
+        aria-label="切换主题"
+        title="切换主题"
+        className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:translate-y-[1px]"
+      >
+        <span className="size-5" aria-hidden="true" />
+      </button>
+    )
+  }
+
   return (
     <button
       type="button"
@@ -36,10 +50,7 @@ export function ThemeToggle() {
       title={isDark ? '切换到亮色模式' : '切换到暗色模式'}
       className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:translate-y-[1px]"
     >
-      {/* Placeholder keeps layout stable pre-mount; swap to icon after mount */}
-      {!mounted ? (
-        <span className="size-5" aria-hidden="true" />
-      ) : isDark ? (
+      {isDark ? (
         <Sun className="size-5 transition-transform duration-300" />
       ) : (
         <Moon className="size-5 transition-transform duration-300" />

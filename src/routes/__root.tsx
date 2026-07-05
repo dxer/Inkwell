@@ -17,6 +17,8 @@ const DEFAULT_SETTINGS = [
   { key: "page_size", value: "10" },
   { key: "github_url", value: "https://github.com" },
   { key: "twitter_url", value: "https://x.com" },
+  { key: "show_github", value: "true" },
+  { key: "show_twitter", value: "true" },
   { key: "rss_url", value: "" },
   { key: "icp_text", value: "© 2026 AI-Native Blog. All Rights Reserved." },
 ];
