@@ -1,0 +1,322 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Editorial fonts: serif display (Libre Bodoni) for headings, sans (Public Sans) for body/UI.
+   Fonts are now loaded via <link> tags in the document head (see __root.tsx) to avoid render-blocking. */
+
+@theme {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  /* Brand accent — magazine pink, used for CTAs / active states / links */
+  --color-brand: hsl(var(--brand));
+  --color-brand-foreground: hsl(var(--brand-foreground));
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  /* Font families */
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Libre Bodoni", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+
+  /* Fluid type scale (clamp) - responsive across breakpoints */
+  --text-post-title: clamp(1.875rem, 4vw + 1rem, 3rem);          /* detail H1 */
+  --text-list-title: clamp(1.375rem, 1.5vw + 1rem, 1.875rem);    /* home H2 */
+  --text-archive-title: clamp(1.75rem, 2.5vw + 1rem, 2.5rem);    /* tag/category H1 */
+}
+
+@layer base {
+  /*
+   * Design system — Anthropic / Claude official palette, applied site-wide
+   * (front-end reading surface AND admin console share one theme).
+   *
+   *   background  #F4F3EE  Pampas (warm cream paper)
+   *   card        #FFFFFF  pure white surface
+   *   foreground  #1A1A1A  ink / charcoal
+   *   accent      #C15F3C  Crail
+   *   muted-fg    #6B6760  warm stone grey (Cloudy #B1ADA1 deepened for AA contrast)
+   *   border      #E3E0D8  warm hairline
+   *
+   * Contrast verified AA on the cream background.
+   */
+  :root {
+    --background: 40 27% 94%;          /* #F4F3EE Pampas cream paper */
+    --foreground: 0 0% 10%;            /* #1A1A1A charcoal ink */
+    --card: 0 0% 100%;                 /* pure white */
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 14 53% 50%;             /* #C15F3C Crail terracotta */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 14% 90%;           /* warm muted surface */
+    --secondary-foreground: 30 6% 20%;
+    --muted: 40 14% 92%;
+    --muted-foreground: 33 8% 40%;     /* warm stone grey, AA on cream */
+    --accent: 14 53% 50%;              /* Crail */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 45%;          /* deep red */
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 18% 86%;              /* #E3E0D8 warm hairline */
+    --input: 40 18% 86%;
+    --ring: 14 53% 50%;                /* focus ring = Crail */
+    --brand: 14 53% 50%;               /* Crail */
+    --brand-foreground: 0 0% 100%;
+    --radius: 0.5rem;
+  }
+  /*
+   * Dark theme - same warm family, darkened. No pure black, no pure white.
+   */
+  .dark {
+    --background: 30 12% 9%;            /* #1B1916 warm near-black */
+    --foreground: 40 14% 91%;           /* #EDEAE3 warm off-white */
+    --card: 30 8% 14%;                  /* #262320 elevated warm surface */
+    --card-foreground: 40 14% 91%;
+    --popover: 30 8% 14%;
+    --popover-foreground: 40 14% 91%;
+    --primary: 18 65% 58%;              /* #D8764F Crail lifted */
+    --primary-foreground: 30 12% 9%;
+    --secondary: 30 6% 18%;
+    --secondary-foreground: 40 14% 91%;
+    --muted: 30 6% 16%;
+    --muted-foreground: 36 6% 64%;      /* #A8A29A warm light grey, AA on dark */
+    --accent: 18 65% 58%;
+    --accent-foreground: 30 12% 9%;
+    --destructive: 0 62% 52%;
+    --destructive-foreground: 40 14% 91%;
+    --border: 30 10% 20%;               /* #3A352F warm dark hairline */
+    --input: 30 10% 20%;
+    --ring: 18 65% 58%;
+    --brand: 18 65% 58%;
+    --brand-foreground: 30 12% 9%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Slim, unobtrusive scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(0 0% 80%);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(0 0% 65%);
+  background-clip: content-box;
+}
+
+/*
+ * Article reading surface. Used on post detail page where BlockNote HTML is
+ * rendered server-side and styled purely with typography (zero client JS).
+ * Tuned for long-form readability: 65-75 char measure, 1.75 line height,
+ * generous paragraph spacing, restrained brand accent on links.
+ */
+.prose-reader {
+  max-width: 72ch;
+}
+.prose-reader h1, .prose-reader h2, .prose-reader h3 {
+  font-family: var(--font-serif);
+  scroll-margin-top: 5rem;
+}
+.prose-reader a {
+  color: hsl(var(--brand));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.prose-reader a:hover {
+  text-decoration-thickness: 2px;
+}
+.prose-reader img {
+  border-radius: var(--radius);
+}
+.prose-reader blockquote {
+  font-style: italic;
+  border-left-color: hsl(var(--brand));
+}
+/* Ensure rendered article HTML reads well in dark mode */
+.dark .prose-reader,
+.dark .prose-reader p,
+.dark .prose-reader span,
+.dark .prose-reader li,
+.dark .prose-reader strong,
+.dark .prose-reader ol,
+.dark .prose-reader ul {
+  color: hsl(var(--foreground) / 0.9) !important;
+}
+.dark .prose-reader h1,
+.dark .prose-reader h2,
+.dark .prose-reader h3,
+.dark .prose-reader h4,
+.dark .prose-reader h5,
+.dark .prose-reader h6 {
+  color: hsl(var(--foreground)) !important;
+}
+.dark .prose-reader code {
+  background: hsl(var(--secondary));
+  color: hsl(var(--foreground));
+}
+.dark .prose-reader pre {
+  background: hsl(var(--secondary));
+}
+
+/* List/card entrance - toggled by IntersectionObserver adding .is-visible.
+   Items start hidden, rise + fade in when scrolled into view. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: calc(var(--reveal-index, 0) * 50ms);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Smooth color transition when switching themes. Only colors, never layout. */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    transition-delay: 0 !important;
+  }
+}
+
+/* Custom Editorial Syntax Highlighting for Highlight.js */
+.prose-reader pre {
+  background-color: #fafaf9 !important;
+  border: 1px solid hsl(var(--border));
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  color: #1f2937;
+}
+.prose-reader pre code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.85em;
+  background: transparent !important;
+  padding: 0;
+  color: inherit;
+  line-height: 1.7;
+}
+/* Default inline code (not in pre) styling */
+.prose-reader :not(pre) > code {
+  background-color: hsl(var(--secondary));
+  color: #9a3412;
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+}
+
+/* ── Light Mode Syntax Colors ── AA contrast on #fafaf9 background */
+.prose-reader .hljs { color: #1f2937; }
+.prose-reader .hljs-comment, .prose-reader .hljs-quote { color: #6b7280; font-style: italic; }
+.prose-reader .hljs-keyword, .prose-reader .hljs-selector-tag, .prose-reader .hljs-meta .hljs-keyword { color: #9333ea; font-weight: 600; }
+.prose-reader .hljs-string, .prose-reader .hljs-regexp, .prose-reader .hljs-addition { color: #16653a; }
+.prose-reader .hljs-number, .prose-reader .hljs-literal { color: #b45309; }
+.prose-reader .hljs-title, .prose-reader .hljs-section, .prose-reader .hljs-title.class_ { color: #1e40af; font-weight: 600; }
+.prose-reader .hljs-params, .prose-reader .hljs-variable, .prose-reader .hljs-template-variable { color: #374151; }
+.prose-reader .hljs-type, .prose-reader .hljs-built_in, .prose-reader .hljs-bullet, .prose-reader .hljs-symbol { color: #0e7490; }
+.prose-reader .hljs-attr, .prose-reader .hljs-attribute { color: #9a3412; }
+.prose-reader .hljs-deletion { color: #b91c1c; }
+.prose-reader .hljs-function, .prose-reader .hljs-title.function_ { color: #1e40af; }
+.prose-reader .hljs-property { color: #0e7490; }
+.prose-reader .hljs-name, .prose-reader .hljs-tag { color: #9333ea; }
+.prose-reader .hljs-selector-class { color: #b45309; }
+.prose-reader .hljs-selector-id { color: #1e40af; font-weight: 600; }
+.prose-reader .hljs-subst { color: #1f2937; }
+
+/* ── Dark Mode Syntax Colors ── AA contrast on dark warm background */
+.dark .prose-reader pre {
+  background-color: #1a1917 !important;
+  border-color: hsl(30 10% 20%);
+  color: #e5e7eb;
+}
+.dark .prose-reader pre code { color: #e5e7eb; }
+.dark .prose-reader .hljs { color: #e5e7eb; }
+.dark .prose-reader .hljs-comment, .dark .prose-reader .hljs-quote { color: #9ca3af; font-style: italic; }
+.dark .prose-reader .hljs-keyword, .dark .prose-reader .hljs-selector-tag, .dark .prose-reader .hljs-meta .hljs-keyword { color: #c084fc; font-weight: 600; }
+.dark .prose-reader .hljs-string, .dark .prose-reader .hljs-regexp, .dark .prose-reader .hljs-addition { color: #86efac; }
+.dark .prose-reader .hljs-number, .dark .prose-reader .hljs-literal { color: #fbbf24; }
+.dark .prose-reader .hljs-title, .dark .prose-reader .hljs-section, .dark .prose-reader .hljs-title.class_ { color: #93c5fd; }
+.dark .prose-reader .hljs-params, .dark .prose-reader .hljs-variable, .dark .prose-reader .hljs-template-variable { color: #e5e7eb; }
+.dark .prose-reader .hljs-type, .dark .prose-reader .hljs-built_in, .dark .prose-reader .hljs-bullet, .dark .prose-reader .hljs-symbol { color: #67e8f9; }
+.dark .prose-reader .hljs-attr, .dark .prose-reader .hljs-attribute { color: #fdba74; }
+.dark .prose-reader .hljs-function, .dark .prose-reader .hljs-title.function_ { color: #93c5fd; }
+.dark .prose-reader .hljs-property { color: #67e8f9; }
+.dark .prose-reader .hljs-name, .dark .prose-reader .hljs-tag { color: #c084fc; }
+.dark .prose-reader .hljs-selector-class { color: #fbbf24; }
+.dark .prose-reader .hljs-selector-id { color: #93c5fd; font-weight: 600; }
+.dark .prose-reader .hljs-subst { color: #e5e7eb; }
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

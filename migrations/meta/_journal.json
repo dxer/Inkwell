@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1782980947227,
+      "tag": "0000_rainy_patch",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1783060578268,
+      "tag": "0001_cooing_plazm",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1783064873197,
+      "tag": "0002_melted_crusher_hogan",
+      "breakpoints": true
+    }
+  ]
+}
