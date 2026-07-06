@@ -27,16 +27,31 @@ const DEFAULT_SETTINGS = [
 
 // Initialize database tables if they don't exist
 async function initDatabase(db: any) {
+	// D1-compatible SQL without IF NOT EXISTS for indexes
 	const statements = [
-		`CREATE TABLE IF NOT EXISTS \`categories\` (\`id\` text PRIMARY KEY NOT NULL, \`name\` text NOT NULL, \`slug\` text NOT NULL, \`parent_id\` text, \`sort_order\` integer DEFAULT 0, \`color\` text DEFAULT '#C15F3C' NOT NULL)`,
-		`CREATE UNIQUE INDEX IF NOT EXISTS \`categories_slug_unique\` ON \`categories\` (\`slug\`)`,
-		`CREATE TABLE IF NOT EXISTS \`posts\` (\`id\` text PRIMARY KEY NOT NULL, \`title\` text NOT NULL, \`slug\` text NOT NULL, \`description\` text, \`cover_image\` text, \`content_blocks\` text NOT NULL, \`content_html\` text NOT NULL, \`category_id\` text, \`status\` text DEFAULT 'draft', \`views\` integer DEFAULT 0 NOT NULL, \`created_at\` integer NOT NULL, \`updated_at\` integer)`,
-		`CREATE UNIQUE INDEX IF NOT EXISTS \`posts_slug_unique\` ON \`posts\` (\`slug\`)`,
-		`CREATE TABLE IF NOT EXISTS \`posts_to_tags\` (\`post_id\` text, \`tag_id\` text, PRIMARY KEY(\`post_id\`, \`tag_id\`), FOREIGN KEY (\`post_id\`) REFERENCES \`posts\`(\`id\`) ON UPDATE no action ON DELETE cascade, FOREIGN KEY (\`tag_id\`) REFERENCES \`tags\`(\`id\`) ON UPDATE no action ON DELETE cascade)`,
-		`CREATE TABLE IF NOT EXISTS \`site_settings\` (\`key\` text PRIMARY KEY NOT NULL, \`value\` text NOT NULL, \`updated_at\` integer)`,
-		`CREATE TABLE IF NOT EXISTS \`tags\` (\`id\` text PRIMARY KEY NOT NULL, \`name\` text NOT NULL, \`slug\` text NOT NULL)`,
-		`CREATE UNIQUE INDEX IF NOT EXISTS \`tags_slug_unique\` ON \`tags\` (\`slug\`)`,
+		`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, slug TEXT NOT NULL, parent_id TEXT, sort_order INTEGER DEFAULT 0, color TEXT DEFAULT '#C15F3C' NOT NULL)`,
+		`CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, slug TEXT NOT NULL, description TEXT, cover_image TEXT, content_blocks TEXT NOT NULL, content_html TEXT NOT NULL, category_id TEXT, status TEXT DEFAULT 'draft', views INTEGER DEFAULT 0 NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER)`,
+		`CREATE TABLE IF NOT EXISTS posts_to_tags (post_id TEXT, tag_id TEXT, PRIMARY KEY(post_id, tag_id))`,
+		`CREATE TABLE IF NOT EXISTS site_settings (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL, updated_at INTEGER)`,
+		`CREATE TABLE IF NOT EXISTS tags (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, slug TEXT NOT NULL)`,
 	]
+
+	// Create indexes separately (ignore if already exists)
+	try {
+		await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS categories_slug_unique ON categories (slug)`)
+	} catch (e) {
+		// Index may already exist, ignore
+	}
+	try {
+		await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS posts_slug_unique ON posts (slug)`)
+	} catch (e) {
+		// Index may already exist, ignore
+	}
+	try {
+		await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS tags_slug_unique ON tags (slug)`)
+	} catch (e) {
+		// Index may already exist, ignore
+	}
 
 	for (const stmt of statements) {
 		try {
