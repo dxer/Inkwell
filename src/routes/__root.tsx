@@ -25,6 +25,28 @@ const DEFAULT_SETTINGS = [
   { key: "google_analytics_id", value: "" },
 ];
 
+// Initialize database tables if they don't exist
+async function initDatabase(db: any) {
+	const statements = [
+		`CREATE TABLE IF NOT EXISTS \`categories\` (\`id\` text PRIMARY KEY NOT NULL, \`name\` text NOT NULL, \`slug\` text NOT NULL, \`parent_id\` text, \`sort_order\` integer DEFAULT 0, \`color\` text DEFAULT '#C15F3C' NOT NULL)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS \`categories_slug_unique\` ON \`categories\` (\`slug\`)`,
+		`CREATE TABLE IF NOT EXISTS \`posts\` (\`id\` text PRIMARY KEY NOT NULL, \`title\` text NOT NULL, \`slug\` text NOT NULL, \`description\` text, \`cover_image\` text, \`content_blocks\` text NOT NULL, \`content_html\` text NOT NULL, \`category_id\` text, \`status\` text DEFAULT 'draft', \`views\` integer DEFAULT 0 NOT NULL, \`created_at\` integer NOT NULL, \`updated_at\` integer)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS \`posts_slug_unique\` ON \`posts\` (\`slug\`)`,
+		`CREATE TABLE IF NOT EXISTS \`posts_to_tags\` (\`post_id\` text, \`tag_id\` text, PRIMARY KEY(\`post_id\`, \`tag_id\`), FOREIGN KEY (\`post_id\`) REFERENCES \`posts\`(\`id\`) ON UPDATE no action ON DELETE cascade, FOREIGN KEY (\`tag_id\`) REFERENCES \`tags\`(\`id\`) ON UPDATE no action ON DELETE cascade)`,
+		`CREATE TABLE IF NOT EXISTS \`site_settings\` (\`key\` text PRIMARY KEY NOT NULL, \`value\` text NOT NULL, \`updated_at\` integer)`,
+		`CREATE TABLE IF NOT EXISTS \`tags\` (\`id\` text PRIMARY KEY NOT NULL, \`name\` text NOT NULL, \`slug\` text NOT NULL)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS \`tags_slug_unique\` ON \`tags\` (\`slug\`)`,
+	]
+
+	for (const stmt of statements) {
+		try {
+			await db.execute(stmt)
+		} catch (err) {
+			console.error('Failed to execute:', stmt, err)
+		}
+	}
+}
+
 // Loads site settings from D1, auto-seeding defaults on first run.
 // Wrapped in createServerFn so the DB access (and the `cloudflare:workers`
 // import inside getDb) only ever runs on the server — the loader is
@@ -49,6 +71,16 @@ export const getSiteSettingsFn = createServerFn({ method: 'GET' })
     try {
       const dbPromise = (async () => {
         const db = await getDb();
+
+        // Try to select from site_settings to check if tables exist
+        try {
+			await db.select().from(siteSettings).limit(1);
+		} catch (e) {
+			// Table doesn't exist, initialize database
+			console.log('Initializing database...');
+			await initDatabase(db);
+		}
+
         let settingsList = await db.select().from(siteSettings);
 
         // Auto seed if empty. Use ON CONFLICT DO NOTHING so concurrent loader
