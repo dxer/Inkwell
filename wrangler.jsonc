@@ -7,9 +7,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "inkwell_db",
-      "database_id": "YOUR_D1_DATABASE_ID",
-      "migrations_dir": "migrations"
+      "database_name": "inkwell_db"
     }
   ],
   "r2_buckets": [
