@@ -1,1 +1,0 @@
-ALTER TABLE `categories` ADD `color` text DEFAULT '#C15F3C' NOT NULL;

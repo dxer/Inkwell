@@ -3,7 +3,8 @@ CREATE TABLE `categories` (
 	`name` text NOT NULL,
 	`slug` text NOT NULL,
 	`parent_id` text,
-	`sort_order` integer DEFAULT 0
+	`sort_order` integer DEFAULT 0,
+	`color` text DEFAULT '#C15F3C' NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `categories_slug_unique` ON `categories` (`slug`);--> statement-breakpoint
@@ -17,6 +18,7 @@ CREATE TABLE `posts` (
 	`content_html` text NOT NULL,
 	`category_id` text,
 	`status` text DEFAULT 'draft',
+	`views` integer DEFAULT 0 NOT NULL,
 	`created_at` integer NOT NULL,
 	`updated_at` integer,
 	FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON UPDATE no action ON DELETE no action
