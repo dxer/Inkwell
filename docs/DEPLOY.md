@@ -1,4 +1,4 @@
-# 🚀 一键部署到 Cloudflare
+# 🚀 部署到 Cloudflare
 
 ## 前置要求
 
@@ -7,7 +7,7 @@
 
 ---
 
-## 方式一：Cloudflare Pages（网页操作，推荐新手）
+## 部署步骤（网页操作，推荐）
 
 完全在浏览器中完成，无需命令行。
 
@@ -19,6 +19,8 @@
 |---------|------|------|
 | D1 数据库 | `inkwell_db` | 存储文章、分类、标签 |
 | R2 存储桶 | `inkwell-assets` | 存储图片等静态资源 |
+
+**注意**：创建 D1 时会显示一个 `Database ID`（如 `xxx-xxx-xxx-xxx`），记录下来备用。
 
 ### 步骤 2：通过 Workers 创建项目
 
@@ -38,10 +40,12 @@ Application entrypoint: 留空（自动检测）
 
 | 类型 | 变量名 | 资源 |
 |------|--------|------|
-| D1 | `DB` | 选择 `inkwell_db` |
+| D1 | `DB` | 选择 `inkwell_db`（会自动填入 Database ID） |
 | R2 | `MY_R2_BUCKET` | 选择 `inkwell-assets` |
 
 点击 **Add binding** 添加每个绑定。
+
+**重要**：确保 D1 绑定显示了有效的 Database ID，如果没有，请重新选择数据库。
 
 **Environment variables**:
 
@@ -129,58 +133,15 @@ CREATE UNIQUE INDEX `tags_slug_unique` ON `tags` (`slug`);
 
 ---
 
-## 方式二：GitHub Actions 自动部署（推荐开发者）
+## 更新部署
 
-代码推送到 GitHub 后自动部署，适合频繁更新。
-
-### 步骤 1：创建 Cloudflare 资源
-
-同方式一步骤 1。
-
-### 步骤 2：获取 API Token
-
-1. 访问 https://dash.cloudflare.com/profile/api-tokens
-2. 点击 "Create Token"
-3. 使用 "Edit Cloudflare Workers" 模板
-4. 权限勾选：
-   - Account > Cloudflare Workers > Edit
-   - Account > D1 > Edit
-   - Account > R2 > Edit
-5. 生成后复制 Token
-
-### 步骤 3：配置 GitHub Secrets
-
-进入你的 Fork 仓库 → Settings → Secrets and variables → Actions → New repository secret：
-
-| Secret 名称 | 值 |
-|------------|-----|
-| `CLOUDFLARE_ACCOUNT_ID` | 在 Cloudflare Dashboard 右侧可找到 |
-| `CLOUDFLARE_API_TOKEN` | 上一步生成的 Token |
-
-**注意**：环境变量（ADMIN_USERNAME 等）需要在 `.env` 文件中配置并提交，或使用 Cloudflare UI 配置。
-
-### 步骤 4：触发部署
-
-**方式一**：推送代码到 master/main 分支
-```bash
-git push
-```
-
-**方式二**：在 GitHub Actions 页面手动点击 "Run workflow"
-
-### 步骤 5：初始化数据库
-
-同方式一步骤 5。
+代码推送到 GitHub 后，在 Workers 项目页面点击 **Retry deployment** 即可重新部署。
 
 ---
 
 ## 自定义域名（可选）
 
-### Cloudflare Workers/Pages
-
-进入 Workers/Pages → 你的项目 → Triggers/Settings → Custom Domains → 添加你的域名。
-
-按提示在 DNS 中添加 CNAME 记录指向你的 Worker/Pages 域名。
+进入 Workers → 你的项目 → Triggers → Custom Domains → 添加你的域名。
 
 ---
 
@@ -194,7 +155,6 @@ A: 检查 D1 数据库是否已执行初始化 SQL。
 
 A: 检查 R2 存储桶是否正确绑定到 `MY_R2_BUCKET`。
 
-**Q: 如何重新部署？**
+**Q: 部署失败显示 database_id 错误？**
 
-- 方式一：推送代码到 GitHub
-- 方式二：在 Workers/Pages 项目页面点击 "Retry deployment"
+A: 确保在 Workers UI 的 Bindings 中选择了 D1 数据库，Database ID 会自动填充。
