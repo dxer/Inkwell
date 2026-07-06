@@ -81,6 +81,7 @@ function AdminSettings() {
   const [showTwitter, setShowTwitter] = useState(settings.show_twitter !== "false");
   const [rssUrl, setRssUrl] = useState(settings.rss_url || "");
   const [icpText, setIcpText] = useState(settings.icp_text || "");
+  const [googleAnalyticsId, setGoogleAnalyticsId] = useState(settings.google_analytics_id || "");
 
   const [saving, setSaving] = useState(false);
 
@@ -101,6 +102,7 @@ function AdminSettings() {
       show_twitter: showTwitter ? "true" : "false",
       rss_url: rssUrl,
       icp_text: icpText,
+      google_analytics_id: googleAnalyticsId,
     };
 
     try {
@@ -115,7 +117,8 @@ function AdminSettings() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 md:p-8 lg:p-10 flex flex-col gap-6 w-full overflow-y-auto flex-1 min-h-0">
+    <div className="p-6 md:p-8 lg:p-10 pb-16 w-full overflow-y-auto flex-1 min-h-0">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">站点设置</h1>
@@ -176,6 +179,25 @@ function AdminSettings() {
           <div className="flex flex-col gap-2">
             <Label htmlFor="page_size">每页文章数</Label>
             <Input id="page_size" type="number" min={1} max={100} value={pageSize} onChange={(e) => setPageSize(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics */}
+      <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border/40">
+          <h3 className="text-sm font-semibold">分析与统计</h3>
+        </div>
+        <div className="p-5 flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="google_analytics_id">Google Analytics 4 测量 ID</Label>
+            <Input
+              id="google_analytics_id"
+              value={googleAnalyticsId}
+              onChange={(e) => setGoogleAnalyticsId(e.target.value)}
+              placeholder="例如：G-XXXXXXXXXX"
+            />
+            <p className="text-[11px] text-muted-foreground">留空则不注入 GA4 脚本。配置后会在全站全局自动插入跟踪代码。</p>
           </div>
         </div>
       </div>
@@ -245,5 +267,6 @@ function AdminSettings() {
         </div>
       </div>
     </form>
+    </div>
   )
 }

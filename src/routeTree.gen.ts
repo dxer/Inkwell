@@ -17,6 +17,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TagSlugRouteImport } from './routes/tag.$slug'
 import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
+import { Route as ApiUploadRouteImport } from './routes/api/upload'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
@@ -65,6 +66,11 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUploadRoute = ApiUploadRouteImport.update({
+  id: '/api/upload',
+  path: '/api/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/api/upload': typeof ApiUploadRoute
   '/category/$slug': typeof CategorySlugRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/tag/$slug': typeof TagSlugRoute
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/api/upload': typeof ApiUploadRoute
   '/category/$slug': typeof CategorySlugRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/tag/$slug': typeof TagSlugRoute
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/api/upload': typeof ApiUploadRoute
   '/category/$slug': typeof CategorySlugRoute
   '/posts/$slug': typeof PostsSlugRoute
   '/tag/$slug': typeof TagSlugRoute
@@ -162,6 +171,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/login'
     | '/admin/settings'
+    | '/api/upload'
     | '/category/$slug'
     | '/posts/$slug'
     | '/tag/$slug'
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/login'
     | '/admin/settings'
+    | '/api/upload'
     | '/category/$slug'
     | '/posts/$slug'
     | '/tag/$slug'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/login'
     | '/admin/settings'
+    | '/api/upload'
     | '/category/$slug'
     | '/posts/$slug'
     | '/tag/$slug'
@@ -210,6 +222,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   FeedDotxmlRoute: typeof FeedDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiUploadRoute: typeof ApiUploadRoute
   CategorySlugRoute: typeof CategorySlugRoute
   PostsSlugRoute: typeof PostsSlugRoute
   TagSlugRoute: typeof TagSlugRoute
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       path: '/category/$slug'
       fullPath: '/category/$slug'
       preLoaderRoute: typeof CategorySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/upload': {
+      id: '/api/upload'
+      path: '/api/upload'
+      fullPath: '/api/upload'
+      preLoaderRoute: typeof ApiUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/settings': {
@@ -353,6 +373,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   FeedDotxmlRoute: FeedDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiUploadRoute: ApiUploadRoute,
   CategorySlugRoute: CategorySlugRoute,
   PostsSlugRoute: PostsSlugRoute,
   TagSlugRoute: TagSlugRoute,

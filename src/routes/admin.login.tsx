@@ -19,7 +19,7 @@ export const loginFn = createServerFn({ method: 'POST' })
     const token = await signSession({ username, expiresAt }, creds.secret);
     
     const { setCookie } = await import('@tanstack/react-start/server');
-    setCookie('yblog_session', token, {
+    setCookie('inkwell_session', token, {
       httpOnly: true,
       sameSite: 'lax',
       path: '/',

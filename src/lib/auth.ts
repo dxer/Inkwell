@@ -16,7 +16,7 @@ export async function getAuthCredentials() {
   return {
     username: username || "admin",
     password: password || "admin123",
-    secret: secret || "super_secret_session_key_for_yblog_development_32_chars_long",
+    secret: secret || "INSECURE_DEV_FALLBACK_change_me_in_production_1234567890",
   };
 }
 
@@ -84,7 +84,7 @@ export function getCookieValue(cookieHeader: string | null, name: string): strin
 
 export async function getAdminSessionFromRequest(request: Request): Promise<any | null> {
   const cookieHeader = request.headers.get("cookie");
-  const sessionToken = getCookieValue(cookieHeader, "yblog_session");
+  const sessionToken = getCookieValue(cookieHeader, "inkwell_session");
   if (!sessionToken) return null;
   
   const { secret } = await getAuthCredentials();
@@ -97,11 +97,11 @@ export async function createSessionCookieString(username: string): Promise<strin
   const token = await signSession({ username, expiresAt }, secret);
   
   // Returns Set-Cookie value
-  return `yblog_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${
+  return `inkwell_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${
     process.env.NODE_ENV !== "development" ? "; Secure" : ""
   }`;
 }
 
 export function destroySessionCookieString(): string {
-  return `yblog_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  return `inkwell_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 }

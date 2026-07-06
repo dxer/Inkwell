@@ -145,7 +145,7 @@ function TagPage() {
       <div className="border-b border-border pb-6 mb-10">
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">标签归档</span>
         <h1
-          className="font-bold mt-2"
+          className="mt-2"
           style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-archive-title)' }}
         >
           #{tag.name}
@@ -241,7 +241,7 @@ function ArchiveCard({ post, activeTagSlug, index, isLatest }: { post: any; acti
       </div>
 
       <h2
-        className="font-bold leading-tight tracking-tight mb-3"
+        className="leading-tight mb-3"
         style={{
           fontFamily: 'var(--font-serif)',
           fontSize: isLatest ? 'var(--text-post-title)' : 'var(--text-list-title)',

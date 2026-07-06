@@ -2,7 +2,6 @@ import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } 
 import { createServerFn } from '@tanstack/react-start'
 import { checkAuthFn } from '../lib/functions'
 import {
-  PenLine,
   LayoutDashboard,
   FileText,
   FolderTree,
@@ -18,7 +17,7 @@ import { useState, useEffect } from 'react'
 export const logoutFn = createServerFn({ method: 'POST' })
   .handler(async () => {
     const { deleteCookie } = await import('@tanstack/react-start/server');
-    deleteCookie('yblog_session');
+    deleteCookie('inkwell_session');
     return { success: true };
   });
 
@@ -55,7 +54,7 @@ function AdminLayout() {
 
   // Restore collapsed setting on mount
   useEffect(() => {
-    const stored = localStorage.getItem("yblog_admin_sidebar_collapsed");
+    const stored = localStorage.getItem("inkwell_sidebar_collapsed");
     if (stored === "true") {
       setCollapsed(true);
     }
@@ -64,7 +63,7 @@ function AdminLayout() {
   const toggleCollapse = () => {
     const nextVal = !collapsed;
     setCollapsed(nextVal);
-    localStorage.setItem("yblog_admin_sidebar_collapsed", String(nextVal));
+    localStorage.setItem("inkwell_sidebar_collapsed", String(nextVal));
   };
 
   // The login page is a child of this layout route, but it must NOT show the
@@ -87,15 +86,21 @@ function AdminLayout() {
   return (
     <div className="flex-1 flex flex-col md:flex-row md:h-screen md:max-h-screen md:overflow-hidden bg-background text-foreground">
       {/* Sidebar */}
-      <aside className={`w-full ${collapsed ? 'md:w-[68px]' : 'md:w-[250px]'} shrink-0 bg-card border-b md:border-b-0 md:border-r border-border/60 flex flex-col justify-between transition-all duration-300 ease-out md:h-screen`}>
+      <aside className={`w-full ${collapsed ? 'md:w-[68px]' : 'md:w-[250px]'} shrink-0 bg-background border-b md:border-b-0 md:border-r border-border/60 flex flex-col justify-between transition-all duration-300 ease-out md:h-screen`}>
         <div className="flex flex-col">
           {/* Brand header */}
           <div className={`px-5 pt-6 pb-4 ${collapsed ? 'md:px-3 md:pt-5' : ''}`}>
             <Link to="/admin" className={`flex items-center ${collapsed ? 'md:justify-center' : 'gap-2.5'} no-underline`}>
-              <span className="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-foreground to-foreground/80 text-background shrink-0 shadow-sm">
-                <PenLine size={15} strokeWidth={2.25} />
+              <span className="grid place-items-center w-9 h-9 shrink-0">
+                <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="20" y="24" width="24" height="32" rx="6" fill="#cc785c"/>
+                  <rect x="26" y="16" width="12" height="10" fill="#cc785c"/>
+                  <ellipse cx="32" cy="24" rx="8" ry="3" fill="#a64027"/>
+                  <path d="M32 30C34 30 36 32 36 34C36 37.5 33.5 39 32 39C30.5 39 28 37.5 28 34C28 32 30 30 32 30Z" fill="white" opacity="0.9"/>
+                  <rect x="22" y="50" width="20" height="4" rx="2" fill="#a64027" opacity="0.6"/>
+                </svg>
               </span>
-              {!collapsed && <span className="text-base font-bold tracking-tight truncate">yblog</span>}
+              {!collapsed && <span className="text-base font-bold tracking-tight truncate">Inkwell</span>}
             </Link>
             {!collapsed ? (
               <div className="flex items-center gap-2 mt-3.5 px-0.5">
@@ -183,8 +188,12 @@ function AdminLayout() {
       </aside>
 
       {/* Main panel content */}
-      <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-background">
-        <Outlet />
+      <main className="relative flex-1 flex flex-col min-h-0 overflow-hidden bg-content">
+        <div className="admin-grid" />
+        <div className="admin-vignette" />
+        <div className="relative z-10 flex-1 flex flex-col min-h-0">
+          <Outlet />
+        </div>
       </main>
     </div>
   )

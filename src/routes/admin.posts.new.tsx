@@ -22,7 +22,7 @@ import {
 import { cn } from '@/lib/utils'
 import React, { useState, Suspense } from 'react'
 
-// Lazy-load BlockNote editor to prevent SSR compilation errors (since BlockNote requires document/window)
+// Lazy-load the Markdown editor (it touches document at module load)
 const Editor = React.lazy(() => import('../components/editor'));
 
 export const saveNewPostFn = createServerFn({ method: 'POST' })
@@ -146,7 +146,7 @@ function AdminNewPost() {
   };
 
   // Editor values
-  const [contentBlocks, setContentBlocks] = useState("[]");
+  const [contentBlocks, setContentBlocks] = useState("");
   const [contentHtml, setContentHtml] = useState("<p></p>");
   const [plainText, setPlainText] = useState("");
 
@@ -161,8 +161,8 @@ function AdminNewPost() {
 
   const [saving, setSaving] = useState(false);
 
-  const handleEditorChange = (data: { json: string; html: string }) => {
-    setContentBlocks(data.json);
+  const handleEditorChange = (data: { markdown: string; html: string }) => {
+    setContentBlocks(data.markdown);
     setContentHtml(data.html);
     setPlainText(data.html.replace(/<[^>]*>/g, " "));
   };
@@ -370,7 +370,7 @@ function AdminNewPost() {
         </div>
 
         {/* AI & Meta Sidebar Panel */}
-        <div className="w-full lg:w-80 shrink-0 p-6 overflow-y-auto border-t lg:border-t-0 lg:border-l border-border bg-card/10 flex flex-col gap-5">
+        <div className="w-full lg:w-80 shrink-0 p-6 overflow-y-auto border-t lg:border-t-0 lg:border-l border-border bg-background/10 flex flex-col gap-5">
           {/* Cover Settings */}
           <div className="flex flex-col gap-3 p-4 rounded-xl border border-border/60 bg-secondary/30 dark:bg-secondary/15 hover:bg-secondary/50 dark:hover:bg-secondary/25 transition-all duration-300">
             <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5"><ImageIcon size={13} /> 文章封面</h3>

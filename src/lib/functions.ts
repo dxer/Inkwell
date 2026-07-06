@@ -8,7 +8,7 @@ import { generateId } from './id'
 export const checkAuthFn = createServerFn({ method: 'GET' })
   .handler(async () => {
     const { getCookie } = await import('@tanstack/react-start/server');
-    const sessionToken = getCookie('yblog_session');
+    const sessionToken = getCookie('inkwell_session');
     if (!sessionToken) return { authenticated: false, username: null };
     
     const creds = await getAuthCredentials();

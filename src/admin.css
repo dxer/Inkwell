@@ -1,0 +1,237 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/*
+ * Admin console theme — decoupled from the front-end stylesheet but sharing
+ * the Anthropic / Claude design language (DESIGN-claude.md).
+ *
+ * Design constraints:
+ *   - Single, fixed light theme. The admin never enters dark mode
+ *     (no next-themes provider wraps /admin/* routes).
+ *   - Self-contained: does not reference .dark, .reveal, .theme-transition,
+ *     or any front-end reading-surface animation rules.
+ *   - Palette + typography follow DESIGN-claude.md light tokens
+ *     (warm cream canvas, coral primary, ink text, serif display headings).
+ *   - Token names mirror shadcn/ui conventions so existing admin Tailwind
+ *     classes (bg-background, text-foreground, border-border, …) resolve
+ *     correctly without editing any admin component.
+ */
+
+@theme {
+  --color-content: hsl(var(--content));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-brand: hsl(var(--brand));
+  --color-brand-foreground: hsl(var(--brand-foreground));
+
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Libre Bodoni", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+
+  /* Hierarchical radius scale (DESIGN-claude.md). */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+  --radius: 0.5rem;
+
+  /* Fluid type scale — admin page/section headings echo the editorial voice. */
+  --text-admin-title: clamp(1.75rem, 2vw + 1rem, 2.25rem);
+}
+
+@layer base {
+  /*
+   * Admin palette — DESIGN-claude.md light tokens, same family as the public
+   * site. Kept light-only; the admin is a working surface, not a reading one,
+   * so we hold the warm cream canvas + coral CTA without theme switching.
+   *
+   *   background  #faf9f5  canvas (warm cream)
+   *   card        #efe9de  surface-card
+   *   foreground  #141413  ink
+   *   primary     #cc785c  coral (Anthropic signature)
+   *   border      #e6dfd8  hairline
+   *   muted-fg    #6c6a64  muted (warm stone grey, AA on cream)
+   *
+   * Contrast verified AA on the cream background.
+   */
+  :root {
+    --background: 40 33% 98%;          /* #FCF9F6 canvas */
+    --foreground: 40 4% 8%;            /* #141413 ink */
+    --card: 0 0% 100%;                 /* #FFFFFF surface-card */
+    --card-foreground: 40 4% 8%;
+    --content: 40 31% 97%;             /* #fdfaf6 content area */
+    --popover: 0 0% 100%;
+    --popover-foreground: 40 4% 8%;
+    --primary: 15 53% 58%;             /* #cc785c coral */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 39 35% 94%;           /* #f5f0e8 surface-soft */
+    --secondary-foreground: 60 3% 23%; /* #3d3d3a body */
+    --muted: 35 30% 90%;
+    --muted-foreground: 40 4% 41%;     /* #6c6a64 muted, AA on cream */
+    --accent: 15 53% 58%;              /* coral */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 45%;          /* #c64545 error */
+    --destructive-foreground: 0 0% 100%;
+    --border: 33 25% 89%;              /* #e6dfd8 hairline */
+    --input: 33 25% 89%;
+    --ring: 15 53% 58%;                /* focus ring = coral */
+    --brand: 15 53% 58%;               /* coral */
+    --brand-foreground: 0 0% 100%;
+    /* Extended surfaces (DESIGN-claude.md) — light-only variants. */
+    --surface-cream-strong: 35 33% 86%; /* #e8e0d2 active tabs / emphasis bands */
+    --surface-dark: 40 6% 9%;           /* #181715 product chrome (unused in admin, kept for parity) */
+    --surface-dark-elevated: 38 7% 14%; /* #252320 */
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+  /*
+   * Editorial display headings (DESIGN-claude.md): serif, weight 400,
+   * negative letter-spacing. Admin page titles borrow the same voice so the
+   * product feels continuous with the public site.
+   */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+  }
+  h1 { letter-spacing: -0.03em; }
+  h2 { letter-spacing: -0.02em; }
+  h3 { letter-spacing: -0.015em; }
+  h4, h5, h6 { letter-spacing: -0.01em; }
+}
+
+/* Admin grid pattern — inspired by 9router.com */
+.admin-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, hsl(var(--primary) / 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--primary) / 0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+.admin-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, hsl(var(--content)) 100%);
+  pointer-events: none;
+}
+
+/* Slim scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: hsl(0 0% 80%);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(0 0% 65%);
+  background-clip: content-box;
+}
+
+/* Hide scrollbar utility (used by editor panels) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/*
+ * Editor preview surface — light-only prose styling for the Markdown editor
+ * preview pane in the post editor. Mirrors the front-end prose-reader look so authors
+ * see true-to-public rendering while editing.
+ */
+.prose-reader {
+  max-width: 72ch;
+}
+.prose-reader h1, .prose-reader h2, .prose-reader h3 { scroll-margin-top: 5rem; }
+.prose-reader a {
+  color: hsl(var(--brand));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.prose-reader img { border-radius: var(--radius-md); }
+.prose-reader blockquote {
+  font-style: italic;
+  border-left-color: hsl(var(--brand));
+}
+
+.prose-reader pre {
+  background-color: #fafaf9 !important;
+  border: 1px solid hsl(var(--border));
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  color: #1f2937;
+}
+.prose-reader pre code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.85em;
+  background: transparent !important;
+  padding: 0;
+  color: inherit;
+  line-height: 1.7;
+}
+.prose-reader :not(pre) > code {
+  background-color: hsl(var(--secondary));
+  color: #9a3412;
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+}
+
+/* Highlight.js light theme (admin editor preview only) */
+.prose-reader .hljs { color: #1f2937; }
+.prose-reader .hljs-comment, .prose-reader .hljs-quote { color: #6b7280; font-style: italic; }
+.prose-reader .hljs-keyword, .prose-reader .hljs-selector-tag, .prose-reader .hljs-meta .hljs-keyword { color: #9333ea; font-weight: 600; }
+.prose-reader .hljs-string, .prose-reader .hljs-regexp, .prose-reader .hljs-addition { color: #16653a; }
+.prose-reader .hljs-number, .prose-reader .hljs-literal { color: #b45309; }
+.prose-reader .hljs-title, .prose-reader .hljs-section, .prose-reader .hljs-title.class_ { color: #1e40af; font-weight: 600; }
+.prose-reader .hljs-params, .prose-reader .hljs-variable, .prose-reader .hljs-template-variable { color: #374151; }
+.prose-reader .hljs-type, .prose-reader .hljs-built_in, .prose-reader .hljs-bullet, .prose-reader .hljs-symbol { color: #0e7490; }
+.prose-reader .hljs-attr, .prose-reader .hljs-attribute { color: #9a3412; }
+.prose-reader .hljs-deletion { color: #b91c1c; }
+.prose-reader .hljs-function, .prose-reader .hljs-title.function_ { color: #1e40af; }
+.prose-reader .hljs-property { color: #0e7490; }
+.prose-reader .hljs-name, .prose-reader .hljs-tag { color: #9333ea; }
+.prose-reader .hljs-selector-class { color: #b45309; }
+.prose-reader .hljs-selector-id { color: #1e40af; font-weight: 600; }
+.prose-reader .hljs-subst { color: #1f2937; }

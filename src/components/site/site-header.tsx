@@ -27,7 +27,7 @@ export function SiteHeader({ siteTitle, navItems, social, width }: SiteHeaderPro
         {/* Title */}
         <Link
           to="/"
-          className="text-xl sm:text-2xl font-bold tracking-tight hover:text-primary transition-colors"
+          className="text-xl sm:text-2xl tracking-tight hover:text-primary transition-colors"
           style={{ fontFamily: 'var(--font-serif)' }}
         >
           {siteTitle}

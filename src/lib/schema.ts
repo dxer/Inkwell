@@ -14,7 +14,7 @@ export const categories = sqliteTable("categories", {
   slug: text("slug").notNull().unique(),
   parentId: text("parent_id"), // 父分类 ID，支持两级分类
   sortOrder: integer("sort_order").default(0),
-  color: text("color").notNull().default("#C15F3C"), // 分类颜色 HEX，前台列表 pill 用
+  color: text("color").notNull().default("#cc785c"), // 分类颜色 HEX，前台列表 pill 用
 });
 
 // 3. 标签表
@@ -31,7 +31,7 @@ export const posts = sqliteTable("posts", {
   slug: text("slug").notNull().unique(),
   description: text("description"),
   coverImage: text("cover_image"),
-  contentBlocks: text("content_blocks").notNull(), // BlockNote 编辑用 JSON
+  contentBlocks: text("content_blocks").notNull(), // Markdown 源文本
   contentHtml: text("content_html").notNull(),     // 前台渲染用 HTML
   categoryId: text("category_id").references(() => categories.id), // 单分类关联
   status: text("status", { enum: ["draft", "published", "trash"] }).default("draft"),

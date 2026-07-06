@@ -1,4 +1,4 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, useRouterState } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
@@ -7,11 +7,12 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { getDb } from '../lib/db'
 import { siteSettings } from '../lib/schema'
 import appCss from '../styles.css?url'
+import adminCss from '../admin.css?url'
 
 const DEFAULT_SETTINGS = [
-  { key: "site_title", value: "智能无服务器博客" },
+  { key: "site_title", value: "Inkwell" },
   { key: "site_subtitle", value: "基于 TanStack Start & Cloudflare 边缘架构" },
-  { key: "site_description", value: "这是一个基于全栈边缘、全类型安全架构的现代化 AI 智能博客系统。" },
+  { key: "site_description", value: "Inkwell 是一个基于全栈边缘、全类型安全架构的现代化 AI 智能博客系统。" },
   { key: "keywords", value: "TanStack Start, Cloudflare D1, R2, Workers AI, Drizzle ORM, Blog" },
   { key: "language", value: "zh-CN" },
   { key: "page_size", value: "10" },
@@ -21,6 +22,7 @@ const DEFAULT_SETTINGS = [
   { key: "show_twitter", value: "true" },
   { key: "rss_url", value: "" },
   { key: "icp_text", value: "© 2026 AI-Native Blog. All Rights Reserved." },
+  { key: "google_analytics_id", value: "" },
 ];
 
 // Loads site settings from D1, auto-seeding defaults on first run.
@@ -29,29 +31,54 @@ const DEFAULT_SETTINGS = [
 // isomorphic and would otherwise execute in the browser on client navigation.
 export const getSiteSettingsFn = createServerFn({ method: 'GET' })
   .handler(async () => {
-    try {
-      const db = await getDb();
-      let settingsList = await db.select().from(siteSettings);
+    // Add timeout protection to prevent blocking SSR stream
+    const timeoutMs = 15000; // 15 second timeout for DB operations
+    let timedOut = false;
 
-      // Auto seed if empty. Use ON CONFLICT DO NOTHING so concurrent loader
-      // invocations (Strict Mode / parallel requests) don't race on the PK
-      // and throw UNIQUE constraint errors.
-      if (settingsList.length === 0) {
-        for (const setting of DEFAULT_SETTINGS) {
-          await db.insert(siteSettings).values({
-            key: setting.key,
-            value: setting.value,
-            updatedAt: new Date(),
-          }).onConflictDoNothing();
+    const timeoutPromise = new Promise<{ settings: Record<string, string> }>((resolve) => {
+      setTimeout(() => {
+        timedOut = true;
+        const settings: Record<string, string> = {};
+        for (const s of DEFAULT_SETTINGS) {
+          settings[s.key] = s.value;
         }
-        settingsList = await db.select().from(siteSettings);
+        resolve({ settings });
+      }, timeoutMs);
+    });
+
+    try {
+      const dbPromise = (async () => {
+        const db = await getDb();
+        let settingsList = await db.select().from(siteSettings);
+
+        // Auto seed if empty. Use ON CONFLICT DO NOTHING so concurrent loader
+        // invocations (Strict Mode / parallel requests) don't race on the PK
+        // and throw UNIQUE constraint errors.
+        if (settingsList.length === 0) {
+          for (const setting of DEFAULT_SETTINGS) {
+            await db.insert(siteSettings).values({
+              key: setting.key,
+              value: setting.value,
+              updatedAt: new Date(),
+            }).onConflictDoNothing();
+          }
+          settingsList = await db.select().from(siteSettings);
+        }
+
+        const settings: Record<string, string> = {};
+        for (const s of settingsList) {
+          settings[s.key] = s.value;
+        }
+        return { settings };
+      })();
+
+      const result = await Promise.race([dbPromise, timeoutPromise]);
+
+      if (timedOut) {
+        console.warn("getSiteSettingsFn timed out, using default settings");
       }
 
-      const settings: Record<string, string> = {};
-      for (const s of settingsList) {
-        settings[s.key] = s.value;
-      }
-      return { settings };
+      return result;
     } catch (e) {
       console.error("Failed to load settings in root loader", e);
       // Fallback settings in case DB is not available yet
@@ -94,12 +121,6 @@ export const Route = createRootRoute({
           title: title,
         },
       ],
-      links: [
-        {
-          rel: 'stylesheet',
-          href: appCss,
-        },
-      ],
     };
   },
   shellComponent: RootDocument,
@@ -108,26 +129,47 @@ export const Route = createRootRoute({
 function RootDocument({ children }: { children: React.ReactNode }) {
   const { settings } = Route.useLoaderData() as { settings: Record<string, string> };
   const lang = settings?.language || "zh-CN";
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdmin = pathname.startsWith('/admin');
+
+  const content = (
+    <>
+      <div className="flex-1 flex flex-col">
+        {children}
+      </div>
+      <Toaster richColors position="top-center" />
+    </>
+  );
+
+  // Both surfaces use the same serif/sans pairing (DESIGN-claude.md).
+  const fontsHref = "https://fonts.googleapis.com/css2?family=Libre+Bodoni:wght@400;500;600;700&family=Public+Sans:wght@300;400;500;600;700&display=swap";
 
   return (
-    <html lang={lang}>
+    <html lang={lang} data-theme={isAdmin ? 'admin' : 'site'} suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* Google Analytics 4 — injected on the public site only, never in admin */}
+        {settings.google_analytics_id && !isAdmin && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${settings.google_analytics_id}`} />
+            <script>{`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${settings.google_analytics_id}', { send_page_view: true });
+            `}</script>
+          </>
+        )}
+        {/* Favicon */}
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         {/* Fonts loaded async to avoid render-blocking; font-display: swap in the URL */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Libre+Bodoni:wght@400;500;600;700&family=Public+Sans:wght@300;400;500;600;700&display=swap"
-        />
+        <link rel="stylesheet" href={fontsHref} />
+        <link rel="stylesheet" href={isAdmin ? adminCss : appCss} />
       </head>
       <body className="antialiased min-h-screen flex flex-col bg-background text-foreground">
-        <ThemeProvider>
-          <div className="flex-1 flex flex-col">
-            {children}
-          </div>
-          <Toaster richColors position="top-center" />
-        </ThemeProvider>
+        {isAdmin ? content : <ThemeProvider>{content}</ThemeProvider>}
         <TanStackDevtools
           config={{
             position: 'bottom-right',

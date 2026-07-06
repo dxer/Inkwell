@@ -1,206 +1,159 @@
-Welcome to your new TanStack Start app! 
+# Inkwell
 
-# Getting Started
+一个基于 TanStack Start 与 Cloudflare 边缘架构的全栈博客系统。
 
-To run this application:
+## 技术栈
+
+- **框架**: [TanStack Start](https://tanstack.com/start) (SSR + 文件路由)
+- **数据库**: Cloudflare D1 (SQLite) + [Drizzle ORM](https://orm.drizzle.team)
+- **存储**: Cloudflare R2 (文章封面图)
+- **AI**: Cloudflare Workers AI (文章摘要、标签推荐)
+- **样式**: Tailwind CSS v4 + shadcn/ui 组件
+- **认证**: Session Cookie + Cloudflare Workers 环境变量
+
+## 特性
+
+- 全栈类型安全 — 端到端 TypeScript
+- 管理后台 — 文章编辑、分类管理、站点设置
+- 富文本编辑器 — AI 辅助写作、标签推荐、封面管理
+- 分类/标签体系 — 支持两级分类、彩色标签
+- GA4 支持 — 后台配置测量 ID，前台自动注入
+- 自适应布局 — 移动端/桌面端均可使用
+- 响应式设计 — 暖画布色调 + 珊瑚色强调，9Router 风格格子背景
+
+## 本地开发
+
+### 前置条件
+
+- Node.js ≥ 20
+- [pnpm](https://pnpm.io/)
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)（部署时需要）
+
+### 1. 安装依赖
 
 ```bash
 pnpm install
+```
+
+### 2. 初始化本地 D1 数据库
+
+```bash
+# 创建本地 D1 数据库（仅首次）
+pnpm wrangler d1 create inkwell_db --local
+
+# 应用数据库迁移
+pnpm wrangler d1 migrations apply inkwell_db --local
+```
+
+### 3. 配置环境变量
+
+```bash
+cp .env.example .env
+```
+
+编辑 `.env`，填入以下内容：
+
+| 变量 | 说明 | 默认值 |
+|---|---|---|
+| `ADMIN_USERNAME` | 管理后台登录用户名 | `admin` |
+| `ADMIN_PASSWORD` | 管理后台登录密码 | `admin_secure_password` |
+| `SESSION_SECRET` | Session Cookie 加密密钥（至少 32 字符） | 见 `.env.example` |
+
+### 4. 启动开发服务器
+
+```bash
 pnpm dev
 ```
 
-# Building For Production
+打开 http://localhost:3080 访问前台，http://localhost:3080/admin 进入管理后台。
 
-To build this application for production:
+> **注意**: 本地开发使用 `@cloudflare/vite-plugin`，SSR 在 workerd 运行时中执行，因此 D1 绑定和 `cloudflare:workers` 模块在本地也可用。
+
+## 数据库迁移
+
+当修改 `src/lib/schema.ts` 后，需要生成并应用迁移：
+
+```bash
+# 生成迁移 SQL 文件
+pnpm drizzle-kit generate
+
+# 应用到本地数据库
+pnpm wrangler d1 migrations apply inkwell_db --local
+
+# 应用到生产数据库
+pnpm wrangler d1 migrations apply inkwell_db --remote
+```
+
+## 部署到 Cloudflare Workers
+
+### 1. 创建生产资源（仅首次）
+
+```bash
+# 创建 D1 数据库
+pnpm wrangler d1 create inkwell_db
+
+# 创建 R2 存储桶
+pnpm wrangler r2 bucket create inkwell-assets
+
+# 应用迁移到生产数据库
+pnpm wrangler d1 migrations apply inkwell_db --remote
+```
+
+### 2. 配置 wrangler.jsonc
+
+部署前确保 `wrangler.jsonc` 中的 `database_id` 已更新为实际值。创建 D1 数据库后，Wrangler 会输出 database ID，复制到 `wrangler.jsonc` 中：
+
+```jsonc
+{
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "inkwell_db",
+      "database_id": "这里替换为实际的 database ID",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
+```
+
+### 3. 设置生产环境变量
+
+```bash
+pnpm wrangler secret put ADMIN_USERNAME
+pnpm wrangler secret put ADMIN_PASSWORD
+pnpm wrangler secret put SESSION_SECRET
+```
+
+### 4. 构建并部署
 
 ```bash
 pnpm build
+pnpm wrangler deploy
 ```
 
-## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+或一键执行：
 
 ```bash
-pnpm test
+pnpm deploy
 ```
 
-## Styling
+## 项目结构
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `pnpm add @tailwindcss/vite tailwindcss --dev`
-
-
-## Deploy to Cloudflare Workers
-
-This project uses the Cloudflare Vite plugin (configured in `vite.config.ts`) and `wrangler.jsonc`:
-
-1. Install Wrangler: `npm install -g wrangler`
-2. Authenticate: `wrangler login`
-3. Deploy: `npx wrangler deploy`
-
-For production env vars, run `wrangler secret put MY_VAR` for each secret listed in `.env.example`. Public (non-secret) vars go in `wrangler.jsonc` under `vars`.
-
-KV, D1, R2, and Durable Object bindings are configured in `wrangler.jsonc` — see https://developers.cloudflare.com/workers/wrangler/configuration/.
-
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
+```
+src/
+├── routes/          # 文件路由（前台 + 后台）
+│   ├── __root.tsx   # 根布局、GA4 注入
+│   ├── index.tsx    # 首页
+│   ├── posts.$slug  # 文章详情
+│   ├── admin.tsx    # 后台布局（侧边栏）
+│   ├── admin.*.tsx  # 后台各页面
+│   └── ...
+├── components/      # UI 组件
+├── lib/             # 工具函数、数据库 Schema、认证
+├── admin.css        # 后台主题样式
+└── styles.css       # 前台主题样式
 ```
 
-Then anywhere in your JSX you can use it like so:
+## License
 
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+MIT

@@ -16,7 +16,8 @@ export function CodeBlockEnhancer() {
     // 1. Run highlight.js syntax highlighting
     const codeElements = document.querySelectorAll(".prose-reader pre code");
     codeElements.forEach((el) => {
-      if (!el.classList.contains("hljs")) {
+      // Check both class and dataset to prevent double-highlighting warning
+      if (!el.classList.contains("hljs") && !(el as HTMLElement).dataset.highlighted) {
         hljs.highlightElement(el as HTMLElement);
       }
     });
@@ -32,7 +33,7 @@ export function CodeBlockEnhancer() {
 
       // Create the copy button
       const button = document.createElement("button");
-      button.className = "copy-code-button absolute top-3 right-3 p-1.5 rounded-md bg-secondary hover:bg-primary/10 hover:text-primary border border-border/80 text-muted-foreground opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200 cursor-pointer active:scale-90";
+      button.className = "copy-code-button absolute top-3 right-3 p-1.5 rounded-md bg-white/90 dark:bg-neutral-800/90 hover:bg-primary hover:text-white border border-gray-200 dark:border-neutral-600 text-gray-600 dark:text-gray-300 transition-all duration-200 cursor-pointer active:scale-90 z-10 shadow-sm";
       button.setAttribute("aria-label", "Copy code");
       button.innerHTML = COPY_SVG;
 
@@ -41,16 +42,38 @@ export function CodeBlockEnhancer() {
         const codeElement = pre.querySelector("code");
         if (!codeElement) return;
 
-        const codeText = codeElement.innerText;
-        navigator.clipboard.writeText(codeText).then(() => {
-          button.innerHTML = CHECK_SVG;
-          button.classList.add("text-primary", "border-primary/40", "bg-primary/5");
-          
-          setTimeout(() => {
-            button.innerHTML = COPY_SVG;
-            button.classList.remove("text-primary", "border-primary/40", "bg-primary/5");
-          }, 2000);
-        });
+        // Use textContent instead of innerText for better compatibility
+        const codeText = codeElement.textContent || "";
+
+        const copyText = async () => {
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(codeText);
+            } else {
+              // Fallback for older browsers or non-HTTPS
+              const textarea = document.createElement("textarea");
+              textarea.value = codeText;
+              textarea.style.position = "fixed";
+              textarea.style.opacity = "0";
+              document.body.appendChild(textarea);
+              textarea.select();
+              document.execCommand("copy");
+              document.body.removeChild(textarea);
+            }
+
+            button.innerHTML = CHECK_SVG;
+            button.classList.add("text-primary", "border-primary/40", "bg-primary/5");
+
+            setTimeout(() => {
+              button.innerHTML = COPY_SVG;
+              button.classList.remove("text-primary", "border-primary/40", "bg-primary/5");
+            }, 2000);
+          } catch (err) {
+            console.error("Copy failed:", err);
+          }
+        };
+
+        copyText();
       });
 
       pre.appendChild(button);

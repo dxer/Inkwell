@@ -10,7 +10,7 @@ import { ReadingProgress } from '@/components/site/reading-progress'
 import { BackToTop } from '@/components/site/back-to-top'
 import { TableOfContents } from '@/components/site/table-of-contents'
 import { CodeBlockEnhancer } from '@/components/site/code-block-enhancer'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { List, Eye } from 'lucide-react'
 
 export const getPostFn = createServerFn({ method: 'GET' })
@@ -119,7 +119,14 @@ function PostDetail() {
   const { post, tags, settings } = Route.useLoaderData() as { post: any; tags: any[]; settings: Record<string, string> }
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
-  const catStyle = post.categoryName ? categoryColor(post.categoryColor, isDark) : null
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Use light mode during SSR, then switch to client theme after mount
+  const catStyle = post.categoryName ? categoryColor(post.categoryColor, mounted ? isDark : false) : null
   const date = new Date(post.createdAt)
   const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
@@ -201,7 +208,7 @@ function PostDetail() {
           </div>
 
           <h1
-            className="font-bold mb-4 tracking-tight leading-tight"
+            className="mb-4 leading-tight"
             style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-post-title)' }}
           >
             {post.title}
@@ -225,7 +232,7 @@ function PostDetail() {
         </header>
 
         {post.coverImage && (
-          <div className="rounded-lg overflow-hidden border border-border aspect-[16/9] md:aspect-[21/9] mb-12 bg-secondary">
+          <div className="rounded-xl overflow-hidden border border-border aspect-[16/9] md:aspect-[21/9] mb-12 bg-secondary">
             <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
           </div>
         )}
@@ -233,7 +240,7 @@ function PostDetail() {
         <div className="prose prose-lg prose-neutral dark:prose-invert max-w-none leading-relaxed prose-reader
                         prose-headings:[font-family:var(--font-serif)] prose-headings:tracking-tight
                         prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                        prose-img:rounded-lg prose-img:border prose-img:border-border
+                        prose-img:rounded-lg prose-img:border prose-img:border-border prose-img:mx-auto
                         prose-blockquote:border-primary prose-blockquote:not-italic">
           <div dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
         </div>

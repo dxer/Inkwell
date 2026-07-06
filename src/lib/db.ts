@@ -22,17 +22,39 @@ let dbInstance: any;
 export async function getDb() {
   if (dbInstance) return dbInstance;
 
-  const workersModule = "cloudflare:" + "workers";
-  // @ts-ignore - cloudflare:workers only exists inside workerd
-  const { env } = await import(/* @vite-ignore */ workersModule);
+  // Add timeout protection to prevent blocking SSR stream
+  const timeoutMs = 10000; // 10 second timeout for env resolution
+  let timedOut = false;
 
-  if (!env || !env.DB) {
-    throw new Error(
-      "Cloudflare D1 binding 'DB' is not defined. " +
-        "Ensure wrangler.jsonc has a d1_databases entry with binding 'DB'."
-    );
+  const timeoutPromise = new Promise<any>((_, reject) => {
+    setTimeout(() => {
+      timedOut = true;
+      reject(new Error("getDb: cloudflare:workers env resolution timed out"));
+    }, timeoutMs);
+  });
+
+  try {
+    const dbPromise = (async () => {
+      const workersModule = "cloudflare:" + "workers";
+      // @ts-ignore - cloudflare:workers only exists inside workerd
+      const { env } = await import(/* @vite-ignore */ workersModule);
+
+      if (!env || !env.DB) {
+        throw new Error(
+          "Cloudflare D1 binding 'DB' is not defined. " +
+            "Ensure wrangler.jsonc has a d1_databases entry with binding 'DB'."
+        );
+      }
+
+      dbInstance = drizzle(env.DB, { schema });
+      return dbInstance;
+    })();
+
+    return await Promise.race([dbPromise, timeoutPromise]);
+  } catch (e) {
+    if (timedOut) {
+      console.error("getDb timed out, rethrowing error to trigger fallback");
+    }
+    throw e;
   }
-
-  dbInstance = drizzle(env.DB, { schema });
-  return dbInstance;
 }

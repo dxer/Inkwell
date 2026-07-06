@@ -44,7 +44,7 @@ export function SiteLayout({
         {children}
       </main>
 
-      <footer className="border-t border-border mt-auto py-8 text-center text-xs text-muted-foreground">
+      <footer className="border-t border-border mt-auto py-12 text-center text-xs text-muted-foreground">
         <div className={`${maxWidth} mx-auto px-5 sm:px-6 lg:px-8`}>
           <p>{icpText}</p>
         </div>

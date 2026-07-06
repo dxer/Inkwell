@@ -218,7 +218,7 @@ function HomeArticle({ post, index, isLatest }: { post: any; index: number; isLa
       </div>
 
       <h2
-        className="font-bold leading-tight tracking-tight mb-3"
+        className="leading-tight mb-3"
         style={{
           fontFamily: 'var(--font-serif)',
           fontSize: isLatest ? 'var(--text-post-title)' : 'var(--text-list-title)',

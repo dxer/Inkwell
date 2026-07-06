@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { marked } from "marked";
 import hljs from "highlight.js";
-import { uploadAssetFn } from "../lib/functions";
 import { toast } from "sonner";
-import { 
-  Bold, Italic, Link2, Code, Quote, ImageIcon, 
+import {
+  Bold, Italic, Link2, Code, Quote, ImageIcon,
   Columns, Eye, Loader2
 } from "lucide-react";
 
@@ -16,109 +15,36 @@ marked.setOptions({
 
 interface EditorProps {
   initialContent?: string;
-  onChange: (data: { json: string; html: string }) => void;
+  onChange: (data: { markdown: string; html: string }) => void;
   editable?: boolean;
 }
 
-// Convert blocknote JSON structures into plain markdown for complete backwards compatibility
-function convertBlocksToMarkdown(blocksJson: string): string {
-  if (!blocksJson) return "";
-  const trimmed = blocksJson.trim();
-  if (!trimmed.startsWith("[") && !trimmed.startsWith("{")) {
-    return blocksJson; // Already raw markdown
+// Upload a single image file via direct multipart POST (bypasses the
+// server-function RPC layer, which fails on large base64 payloads).
+async function uploadImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch("/api/upload", { method: "POST", body: formData });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `上传失败 (HTTP ${res.status})`);
   }
-  try {
-    const blocks = JSON.parse(blocksJson);
-    if (!Array.isArray(blocks)) return blocksJson;
-    
-    let md = "";
-    for (const block of blocks) {
-      if (!block || !block.type) continue;
-      
-      const getInlineText = (contentList: any[]) => {
-        if (!Array.isArray(contentList)) return "";
-        return contentList.map(item => {
-          let text = item.text || "";
-          if (item.styles?.bold) text = `**${text}**`;
-          if (item.styles?.italic) text = `*${text}*`;
-          if (item.styles?.code) text = `\`${text}\``;
-          return text;
-        }).join("");
-      };
-
-      const inlineText = getInlineText(block.content);
-
-      switch (block.type) {
-        case "paragraph":
-          md += `${inlineText}\n\n`;
-          break;
-        case "heading":
-          const level = block.props?.level || 1;
-          md += `${"#".repeat(level)} ${inlineText}\n\n`;
-          break;
-        case "bulletListItem":
-          md += `- ${inlineText}\n`;
-          break;
-        case "numberedListItem":
-          md += `1. ${inlineText}\n`;
-          break;
-        case "image":
-          const url = block.props?.url || "";
-          const caption = block.props?.caption || "图片";
-          md += `![${caption}](${url})\n\n`;
-          break;
-        case "codeBlock":
-          const codeText = block.content?.[0]?.text || "";
-          const language = block.props?.language || "";
-          md += `\`\`\`${language}\n${codeText}\n\`\`\`\n\n`;
-          break;
-        case "blockquote":
-          md += `> ${inlineText}\n\n`;
-          break;
-        default:
-          md += `${inlineText}\n\n`;
-          break;
-      }
-    }
-    return md.trim();
-  } catch (e) {
-    return blocksJson;
-  }
+  const data = await res.json();
+  return data.url as string;
 }
-
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        const base64Str = reader.result.split(",")[1];
-        resolve(base64Str);
-      } else {
-        reject(new Error("文件转换失败"));
-      }
-    };
-    reader.onerror = (error) => reject(error);
-  });
-};
 
 export default function Editor({ initialContent, onChange, editable = true }: EditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
-  
-  // Parse compat markdown values
-  const initialText = useMemo(() => {
-    return convertBlocksToMarkdown(initialContent || "");
-  }, [initialContent]);
 
-  const [markdown, setMarkdown] = useState(initialText);
+  const [markdown, setMarkdown] = useState(initialContent || "");
   const [splitMode, setSplitMode] = useState(true);
   const [uploading, setUploading] = useState(false);
 
   // Sync state when async database loads
   useEffect(() => {
-    setMarkdown(initialText);
-  }, [initialText]);
+    setMarkdown(initialContent || "");
+  }, [initialContent]);
 
   // Compile markdown to raw HTML
   const htmlContent = useMemo(() => {
@@ -133,7 +59,11 @@ export default function Editor({ initialContent, onChange, editable = true }: Ed
   useEffect(() => {
     if (previewRef.current && splitMode) {
       previewRef.current.querySelectorAll("pre code").forEach((block) => {
-        hljs.highlightElement(block as HTMLElement);
+        const el = block as HTMLElement;
+        // Check both class and dataset to prevent double-highlighting warning
+        if (!el.classList.contains("hljs") && !el.dataset.highlighted) {
+          hljs.highlightElement(el);
+        }
       });
     }
   }, [htmlContent, splitMode]);
@@ -142,9 +72,9 @@ export default function Editor({ initialContent, onChange, editable = true }: Ed
   const handleChange = (val: string) => {
     try {
       const compiledHtml = marked.parse(val) as string;
-      onChange({ json: val, html: compiledHtml });
+      onChange({ markdown: val, html: compiledHtml });
     } catch (e) {
-      onChange({ json: val, html: `<p>${val}</p>` });
+      onChange({ markdown: val, html: `<p>${val}</p>` });
     }
   };
 
@@ -178,21 +108,20 @@ export default function Editor({ initialContent, onChange, editable = true }: Ed
         insertAtCursor(`![图片上传中...](${tempId})`);
 
         try {
-          const base64 = await fileToBase64(file);
-          const res = await uploadAssetFn({
-            data: {
-              name: file.name,
-              type: file.type,
-              base64,
-            },
+          const url = await uploadImage(file);
+
+          setMarkdown((prev) => {
+            const next = prev.replace(`![图片上传中...](${tempId})`, `![图片](${url})`);
+            handleChange(next);
+            return next;
           });
-          
-          setMarkdown((prev) => prev.replace(`![图片上传中...](${tempId})`, `![图片](${res.url})`));
-          handleChange(markdown.replace(`![图片上传中...](${tempId})`, `![图片](${res.url})`));
         } catch (err: any) {
           console.error("Paste image failed:", err);
-          setMarkdown((prev) => prev.replace(`![图片上传中...](${tempId})`, ""));
-          handleChange(markdown.replace(`![图片上传中...](${tempId})`, ""));
+          setMarkdown((prev) => {
+            const next = prev.replace(`![图片上传中...](${tempId})`, "");
+            handleChange(next);
+            return next;
+          });
           toast.error("粘贴图片上传失败", { description: err.message || "" });
         } finally {
           setUploading(false);
@@ -213,21 +142,20 @@ export default function Editor({ initialContent, onChange, editable = true }: Ed
         insertAtCursor(`![图片上传中...](${tempId})`);
 
         try {
-          const base64 = await fileToBase64(file);
-          const res = await uploadAssetFn({
-            data: {
-              name: file.name,
-              type: file.type,
-              base64,
-            },
+          const url = await uploadImage(file);
+
+          setMarkdown((prev) => {
+            const next = prev.replace(`![图片上传中...](${tempId})`, `![图片](${url})`);
+            handleChange(next);
+            return next;
           });
-          
-          setMarkdown((prev) => prev.replace(`![图片上传中...](${tempId})`, `![图片](${res.url})`));
-          handleChange(markdown.replace(`![图片上传中...](${tempId})`, `![图片](${res.url})`));
         } catch (err: any) {
           console.error("Drop image failed:", err);
-          setMarkdown((prev) => prev.replace(`![图片上传中...](${tempId})`, ""));
-          handleChange(markdown.replace(`![图片上传中...](${tempId})`, ""));
+          setMarkdown((prev) => {
+            const next = prev.replace(`![图片上传中...](${tempId})`, "");
+            handleChange(next);
+            return next;
+          });
           toast.error("拖放图片上传失败", { description: err.message || "" });
         } finally {
           setUploading(false);

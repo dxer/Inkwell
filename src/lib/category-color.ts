@@ -9,7 +9,7 @@
  * Falls back to the brand terracotta for invalid/missing input.
  */
 
-const BRAND_FALLBACK = '#C15F3C'
+const BRAND_FALLBACK = '#cc785c'
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))

@@ -1,13 +1,13 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "yblog",
+  "name": "inkwell",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "yblog_db",
+      "database_name": "inkwell_db",
       "database_id": "YOUR_D1_DATABASE_ID",
       "migrations_dir": "migrations"
     }
@@ -15,7 +15,7 @@
   "r2_buckets": [
     {
       "binding": "MY_R2_BUCKET",
-      "bucket_name": "yblog-assets"
+      "bucket_name": "inkwell-assets"
     }
   ],
   "ai": {
