@@ -38,24 +38,24 @@ async function initDatabase(db: any) {
 
 	// Create indexes separately (ignore if already exists)
 	try {
-		await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS categories_slug_unique ON categories (slug)`)
+		await db.run(`CREATE UNIQUE INDEX IF NOT EXISTS categories_slug_unique ON categories (slug)`)
 	} catch (e) {
 		// Index may already exist, ignore
 	}
 	try {
-		await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS posts_slug_unique ON posts (slug)`)
+		await db.run(`CREATE UNIQUE INDEX IF NOT EXISTS posts_slug_unique ON posts (slug)`)
 	} catch (e) {
 		// Index may already exist, ignore
 	}
 	try {
-		await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS tags_slug_unique ON tags (slug)`)
+		await db.run(`CREATE UNIQUE INDEX IF NOT EXISTS tags_slug_unique ON tags (slug)`)
 	} catch (e) {
 		// Index may already exist, ignore
 	}
 
 	for (const stmt of statements) {
 		try {
-			await db.execute(stmt)
+			await db.run(stmt)
 		} catch (err) {
 			console.error('Failed to execute:', stmt, err)
 		}
