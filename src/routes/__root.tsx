@@ -1,4 +1,4 @@
-import { HeadContent, Scripts, createRootRoute, useRouterState } from '@tanstack/react-router'
+import { HeadContent, Link, Scripts, createRootRoute, useRouterState } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
@@ -259,6 +259,8 @@ export const Route = createRootRoute({
     };
   },
   shellComponent: RootDocument,
+  notFoundComponent: NotFoundPage,
+  errorComponent: ({ error }) => <ErrorPage error={error} />,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -319,5 +321,45 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function NotFoundPage() {
+  return (
+    <div className="flex-1 grid place-items-center p-8 min-h-screen">
+      <div className="text-center max-w-md flex flex-col items-center gap-4">
+        <p className="text-7xl font-extrabold tracking-tight text-primary font-mono">404</p>
+        <h1 className="text-xl font-bold">页面未找到</h1>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          你访问的页面可能已被移动、删除，或者从未存在。
+        </p>
+        <Link
+          to="/"
+          className="inline-flex items-center justify-center h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity no-underline"
+        >
+          返回首页
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+function ErrorPage({ error }: { error: Error }) {
+  return (
+    <div className="flex-1 grid place-items-center p-8 min-h-screen">
+      <div className="text-center max-w-md flex flex-col items-center gap-4">
+        <p className="text-7xl font-extrabold tracking-tight text-destructive font-mono">500</p>
+        <h1 className="text-xl font-bold">出错了</h1>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {error?.message || '页面加载时发生未知错误。'}
+        </p>
+        <Link
+          to="/"
+          className="inline-flex items-center justify-center h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity no-underline"
+        >
+          返回首页
+        </Link>
+      </div>
+    </div>
   )
 }
