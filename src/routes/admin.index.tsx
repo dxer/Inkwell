@@ -120,7 +120,7 @@ function AdminIndex() {
         {statCards.map((s) => (
           <div key={s.label} className="relative p-4 rounded-xl border border-border/60 bg-card hover:border-border transition-all duration-300 group overflow-hidden">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground/80 tracking-widest">{s.label}</span>
+              <span className="text-xs uppercase font-bold text-muted-foreground/80 tracking-widest">{s.label}</span>
               <span className={`w-7 h-7 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center shadow-sm`}>
                 <s.icon size={13} className="text-white" strokeWidth={2.25} />
               </span>

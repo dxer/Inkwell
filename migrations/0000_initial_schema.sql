@@ -13,6 +13,7 @@ CREATE TABLE `posts` (
 	`title` text NOT NULL,
 	`slug` text NOT NULL,
 	`description` text,
+	`keywords` text,
 	`cover_image` text,
 	`content_blocks` text NOT NULL,
 	`content_html` text NOT NULL,

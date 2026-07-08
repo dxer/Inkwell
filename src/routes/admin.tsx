@@ -11,6 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  KeyRound,
+  Bot,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -44,6 +46,8 @@ const NAV_ITEMS = [
   { to: '/admin' as const, label: '工作台首页', icon: LayoutDashboard, exact: true },
   { to: '/admin/posts' as const, label: '文章管理', icon: FileText },
   { to: '/admin/categories' as const, label: '分类管理', icon: FolderTree },
+  { to: '/admin/apikeys' as const, label: 'API 密钥', icon: KeyRound },
+  { to: '/admin/ai' as const, label: 'AI 中心', icon: Bot },
   { to: '/admin/settings' as const, label: '站点设置', icon: Settings },
 ]
 
@@ -92,31 +96,20 @@ function AdminLayout() {
           <div className={`px-5 pt-6 pb-4 ${collapsed ? 'md:px-3 md:pt-5' : ''}`}>
             <Link to="/admin" className={`flex items-center ${collapsed ? 'md:justify-center' : 'gap-2.5'} no-underline`}>
               <span className="grid place-items-center w-9 h-9 shrink-0">
-                <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="20" y="24" width="24" height="32" rx="6" fill="#cc785c"/>
-                  <rect x="26" y="16" width="12" height="10" fill="#cc785c"/>
-                  <ellipse cx="32" cy="24" rx="8" ry="3" fill="#a64027"/>
-                  <path d="M32 30C34 30 36 32 36 34C36 37.5 33.5 39 32 39C30.5 39 28 37.5 28 34C28 32 30 30 32 30Z" fill="white" opacity="0.9"/>
-                  <rect x="22" y="50" width="20" height="4" rx="2" fill="#a64027" opacity="0.6"/>
+                <svg width="36" height="36" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="nibSidebar" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stopColor="#db9276"/>
+                      <stop offset="1" stopColor="#b5674a"/>
+                    </linearGradient>
+                  </defs>
+                  <circle cx="32" cy="32" r="29" fill="url(#nibSidebar)"/>
+                  <path d="M26 16 L38 16 L38 20 L33 20 L31 44 L38 44 L38 48 L26 48 L26 44 L29 44 L27 20 L26 20 Z" fill="#ffffff"/>
                 </svg>
               </span>
               {!collapsed && <span className="text-base font-bold tracking-tight truncate">Inkwell</span>}
             </Link>
-            {!collapsed ? (
-              <div className="flex items-center gap-2 mt-3.5 px-0.5">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
-                  <Sparkles size={11} className="text-primary" />
-                </div>
-                <span className="text-[11px] text-muted-foreground font-medium truncate">
-                  {username || '管理员'}
-                </span>
-              </div>
-            ) : (
-              <p className="hidden md:block text-[9px] text-muted-foreground mt-3 font-semibold uppercase tracking-wider text-center truncate w-full">
-                {username?.slice(0, 3) || 'ADM'}
-              </p>
-            )}
-          </div>
+                      </div>
 
           {/* Separator */}
           <div className={`mx-4 ${collapsed ? 'md:mx-2' : ''} border-t border-border/40 mb-2`} />

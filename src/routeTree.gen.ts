@@ -18,9 +18,12 @@ import { Route as TagSlugRouteImport } from './routes/tag.$slug'
 import { Route as PostsSlugRouteImport } from './routes/posts.$slug'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as ApiUploadRouteImport } from './routes/api/upload'
+import { Route as ApiSyncRouteImport } from './routes/api/sync'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminApikeysRouteImport } from './routes/admin.apikeys'
+import { Route as AdminAiRouteImport } from './routes/admin.ai'
 import { Route as AdminPostsIndexRouteImport } from './routes/admin.posts.index'
 import { Route as ApiAssetsKeyRouteImport } from './routes/api/assets.$key'
 import { Route as AdminPostsNewRouteImport } from './routes/admin.posts.new'
@@ -71,6 +74,11 @@ const ApiUploadRoute = ApiUploadRouteImport.update({
   path: '/api/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSyncRoute = ApiSyncRouteImport.update({
+  id: '/api/sync',
+  path: '/api/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -84,6 +92,16 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
 const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminApikeysRoute = AdminApikeysRouteImport.update({
+  id: '/apikeys',
+  path: '/apikeys',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAiRoute = AdminAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPostsIndexRoute = AdminPostsIndexRouteImport.update({
@@ -112,9 +130,12 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/feed.xml': typeof FeedDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/ai': typeof AdminAiRoute
+  '/admin/apikeys': typeof AdminApikeysRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/api/sync': typeof ApiSyncRoute
   '/api/upload': typeof ApiUploadRoute
   '/category/$slug': typeof CategorySlugRoute
   '/posts/$slug': typeof PostsSlugRoute
@@ -129,9 +150,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/feed.xml': typeof FeedDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/ai': typeof AdminAiRoute
+  '/admin/apikeys': typeof AdminApikeysRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/api/sync': typeof ApiSyncRoute
   '/api/upload': typeof ApiUploadRoute
   '/category/$slug': typeof CategorySlugRoute
   '/posts/$slug': typeof PostsSlugRoute
@@ -148,9 +172,12 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/feed.xml': typeof FeedDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/ai': typeof AdminAiRoute
+  '/admin/apikeys': typeof AdminApikeysRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/api/sync': typeof ApiSyncRoute
   '/api/upload': typeof ApiUploadRoute
   '/category/$slug': typeof CategorySlugRoute
   '/posts/$slug': typeof PostsSlugRoute
@@ -168,9 +195,12 @@ export interface FileRouteTypes {
     | '/admin'
     | '/feed.xml'
     | '/sitemap.xml'
+    | '/admin/ai'
+    | '/admin/apikeys'
     | '/admin/categories'
     | '/admin/login'
     | '/admin/settings'
+    | '/api/sync'
     | '/api/upload'
     | '/category/$slug'
     | '/posts/$slug'
@@ -185,9 +215,12 @@ export interface FileRouteTypes {
     | '/'
     | '/feed.xml'
     | '/sitemap.xml'
+    | '/admin/ai'
+    | '/admin/apikeys'
     | '/admin/categories'
     | '/admin/login'
     | '/admin/settings'
+    | '/api/sync'
     | '/api/upload'
     | '/category/$slug'
     | '/posts/$slug'
@@ -203,9 +236,12 @@ export interface FileRouteTypes {
     | '/admin'
     | '/feed.xml'
     | '/sitemap.xml'
+    | '/admin/ai'
+    | '/admin/apikeys'
     | '/admin/categories'
     | '/admin/login'
     | '/admin/settings'
+    | '/api/sync'
     | '/api/upload'
     | '/category/$slug'
     | '/posts/$slug'
@@ -222,6 +258,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   FeedDotxmlRoute: typeof FeedDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiSyncRoute: typeof ApiSyncRoute
   ApiUploadRoute: typeof ApiUploadRoute
   CategorySlugRoute: typeof CategorySlugRoute
   PostsSlugRoute: typeof PostsSlugRoute
@@ -294,6 +331,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/sync': {
+      id: '/api/sync'
+      path: '/api/sync'
+      fullPath: '/api/sync'
+      preLoaderRoute: typeof ApiSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -313,6 +357,20 @@ declare module '@tanstack/react-router' {
       path: '/categories'
       fullPath: '/admin/categories'
       preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/apikeys': {
+      id: '/admin/apikeys'
+      path: '/apikeys'
+      fullPath: '/admin/apikeys'
+      preLoaderRoute: typeof AdminApikeysRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/ai': {
+      id: '/admin/ai'
+      path: '/ai'
+      fullPath: '/admin/ai'
+      preLoaderRoute: typeof AdminAiRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/posts/': {
@@ -347,6 +405,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAiRoute: typeof AdminAiRoute
+  AdminApikeysRoute: typeof AdminApikeysRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -357,6 +417,8 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAiRoute: AdminAiRoute,
+  AdminApikeysRoute: AdminApikeysRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSettingsRoute: AdminSettingsRoute,
@@ -373,6 +435,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   FeedDotxmlRoute: FeedDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiSyncRoute: ApiSyncRoute,
   ApiUploadRoute: ApiUploadRoute,
   CategorySlugRoute: CategorySlugRoute,
   PostsSlugRoute: PostsSlugRoute,

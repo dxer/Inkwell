@@ -1,12 +1,11 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Ink bottle body -->
-  <rect x="20" y="24" width="24" height="32" rx="6" fill="#cc785c"/>
-  <!-- Bottle neck -->
-  <rect x="26" y="16" width="12" height="10" fill="#cc785c"/>
-  <!-- Ink well opening (darker) -->
-  <ellipse cx="32" cy="24" rx="8" ry="3" fill="#a64027"/>
-  <!-- Ink drop (white) -->
-  <path d="M32 30C34 30 36 32 36 34C36 37.5 33.5 39 32 39C30.5 39 28 37.5 28 34C28 32 30 30 32 30Z" fill="white" opacity="0.9"/>
-  <!-- Ink puddle at bottom -->
-  <rect x="22" y="50" width="20" height="4" rx="2" fill="#a64027" opacity="0.6"/>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="c" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#db9276"/>
+      <stop offset="1" stop-color="#b5674a"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="29" fill="url(#c)"/>
+  <!-- Italic serif "I" -->
+  <path d="M26 16 L38 16 L38 20 L33 20 L31 44 L38 44 L38 48 L26 48 L26 44 L29 44 L27 20 L26 20 Z" fill="#ffffff"/>
 </svg>

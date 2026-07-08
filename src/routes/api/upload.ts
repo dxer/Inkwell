@@ -1,17 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { putAsset } from "../../lib/storage";
 import { generateId } from "../../lib/id";
+import { authenticateApiKey } from "../../lib/apikey";
 
 // Direct multipart upload endpoint — bypasses the TanStack server-function RPC
 // layer (which JSON-encodes payloads and chokes on large base64 bodies with
 // "Failed to fetch" / "Network connection lost"). Accepts a raw binary file
 // via FormData, persists it via putAsset (R2 in prod, in-memory in local dev),
 // and returns the public URL.
+// 鉴权：Authorization: Bearer <apikey>，与 /api/sync 共用同一套密钥。
 export const Route = createFileRoute("/api/upload")({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
         try {
+          if (!(await authenticateApiKey(request))) {
+            return new Response(JSON.stringify({ error: "API Key 无效或未授权" }), {
+              status: 401,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
           const formData = await request.formData();
           const file = formData.get("file");
 

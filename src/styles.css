@@ -51,7 +51,7 @@
   --font-serif: "Libre Bodoni", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 
   /* Fluid type scale (clamp) - responsive across breakpoints */
-  --text-post-title: clamp(1.875rem, 4vw + 1rem, 3rem);          /* detail H1 */
+  --text-post-title: clamp(1.5rem, 3vw + 0.75rem, 2.25rem);          /* detail H1 */
   --text-list-title: clamp(1.375rem, 1.5vw + 1rem, 1.875rem);    /* home H2 */
   --text-archive-title: clamp(1.75rem, 2.5vw + 1rem, 2.5rem);    /* tag/category H1 */
 }
@@ -183,10 +183,14 @@
 .prose-reader {
   max-width: 72ch;
 }
-.prose-reader h1, .prose-reader h2, .prose-reader h3 {
+.prose-reader h1, .prose-reader h2, .prose-reader h3, .prose-reader h4, .prose-reader h5, .prose-reader h6 {
   font-family: var(--font-serif);
   scroll-margin-top: 5rem;
 }
+.prose-reader h1 { font-size: 1.625rem; }  /* 26px */
+.prose-reader h2 { font-size: 1.375rem; }  /* 22px */
+.prose-reader h3 { font-size: 1.125rem; }  /* 18px */
+.prose-reader h4 { font-size: 1rem; }      /* 16px */
 .prose-reader a {
   color: hsl(var(--brand));
   text-decoration: underline;

@@ -4,14 +4,11 @@ import hljs from "highlight.js";
 import { toast } from "sonner";
 import {
   Bold, Italic, Link2, Code, Quote, ImageIcon,
-  Columns, Eye, Loader2
+  Columns, Loader2
 } from "lucide-react";
 
 // Configure marked compiler options
-marked.setOptions({
-  gfm: true,
-  breaks: true
-});
+const MARKED_OPTIONS = { gfm: true, breaks: true };
 
 interface EditorProps {
   initialContent?: string;
@@ -36,6 +33,8 @@ async function uploadImage(file: File): Promise<string> {
 export default function Editor({ initialContent, onChange, editable = true }: EditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const previewPaneRef = useRef<HTMLDivElement>(null);
+  const lastScrollSource = useRef<'edit' | 'preview' | null>(null);
 
   const [markdown, setMarkdown] = useState(initialContent || "");
   const [splitMode, setSplitMode] = useState(true);
@@ -49,7 +48,7 @@ export default function Editor({ initialContent, onChange, editable = true }: Ed
   // Compile markdown to raw HTML
   const htmlContent = useMemo(() => {
     try {
-      return marked.parse(markdown) as string;
+      return marked.parse(markdown, MARKED_OPTIONS) as string;
     } catch (e) {
       return `<p class="text-destructive">Markdown 编译错误: ${(e as Error).message}</p>`;
     }
@@ -68,10 +67,45 @@ export default function Editor({ initialContent, onChange, editable = true }: Ed
     }
   }, [htmlContent, splitMode]);
 
+  // Sync scroll between editor and preview
+  useEffect(() => {
+    if (!splitMode) return;
+    const editPane = textareaRef.current?.parentElement;
+    const previewPane = previewPaneRef.current;
+    if (!editPane || !previewPane) return;
+
+    const syncScroll = (source: HTMLElement, target: HTMLElement) => {
+      const ratio = source.scrollTop / (source.scrollHeight - source.clientHeight || 1);
+      target.scrollTop = ratio * (target.scrollHeight - target.clientHeight);
+    };
+
+    const onEditScroll = () => {
+      if (lastScrollSource.current === 'preview') return;
+      lastScrollSource.current = 'edit';
+      syncScroll(editPane, previewPane);
+      requestAnimationFrame(() => { lastScrollSource.current = null; });
+    };
+
+    const onPreviewScroll = () => {
+      if (lastScrollSource.current === 'edit') return;
+      lastScrollSource.current = 'preview';
+      syncScroll(previewPane, editPane);
+      requestAnimationFrame(() => { lastScrollSource.current = null; });
+    };
+
+    editPane.addEventListener('scroll', onEditScroll, { passive: true });
+    previewPane.addEventListener('scroll', onPreviewScroll, { passive: true });
+
+    return () => {
+      editPane.removeEventListener('scroll', onEditScroll);
+      previewPane.removeEventListener('scroll', onPreviewScroll);
+    };
+  }, [splitMode]);
+
   // Handle value change dispatching
   const handleChange = (val: string) => {
     try {
-      const compiledHtml = marked.parse(val) as string;
+      const compiledHtml = marked.parse(val, MARKED_OPTIONS) as string;
       onChange({ markdown: val, html: compiledHtml });
     } catch (e) {
       onChange({ markdown: val, html: `<p>${val}</p>` });
@@ -208,7 +242,7 @@ export default function Editor({ initialContent, onChange, editable = true }: Ed
   };
 
   return (
-    <div className="w-full flex flex-col min-h-[450px] bg-background text-foreground rounded-lg border border-border overflow-hidden">
+    <div className="flex-1 w-full flex flex-col text-foreground rounded-lg border border-border overflow-hidden bg-card">
       {/* Toolbar header */}
       <div className="flex items-center justify-between border-b border-border bg-secondary/10 px-3 py-2 shrink-0">
         <div className="flex items-center gap-1">
@@ -272,8 +306,8 @@ export default function Editor({ initialContent, onChange, editable = true }: Ed
             type="button"
             onClick={() => setSplitMode(!splitMode)}
             className={`p-1.5 rounded text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors ${
-              splitMode 
-                ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" 
+              splitMode
+                ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
                 : "bg-background text-muted-foreground hover:text-foreground border border-border hover:bg-secondary"
             }`}
             title={splitMode ? "切换为单栏" : "开启分屏预览"}
@@ -284,10 +318,10 @@ export default function Editor({ initialContent, onChange, editable = true }: Ed
         </div>
       </div>
 
-      {/* Editor columns grid */}
-      <div className="flex-1 min-h-[400px] grid grid-cols-1 divide-y lg:divide-y-0 lg:divide-x divide-border lg:grid-cols-2">
+      {/* Editor columns: flex layout to fill remaining space */}
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left editing pane */}
-        <div className={`p-4 flex flex-col min-h-0 bg-background ${!splitMode && "lg:col-span-2"}`}>
+        <div className={`flex-1 p-4 bg-background flex flex-col min-h-0 overflow-y-auto ${!splitMode && "lg:flex-row"}`}>
           <textarea
             ref={textareaRef}
             value={markdown}
@@ -298,7 +332,7 @@ export default function Editor({ initialContent, onChange, editable = true }: Ed
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             onDrop={handleDrop}
-            className="flex-1 w-full min-h-[380px] bg-transparent resize-none border-0 p-0 text-sm font-mono focus:outline-none focus:ring-0 leading-relaxed placeholder:text-muted-foreground/30 text-foreground"
+            className="flex-1 w-full min-h-0 bg-transparent resize-none border-0 p-0 text-sm font-mono focus:outline-none focus:ring-0 leading-relaxed placeholder:text-muted-foreground/30 text-foreground"
             placeholder="在此输入 Markdown 正文。支持拖入或直接粘贴图片上传…"
             disabled={!editable}
           />
@@ -306,15 +340,10 @@ export default function Editor({ initialContent, onChange, editable = true }: Ed
 
         {/* Right rendering pane */}
         {splitMode && (
-          <div className="p-6 overflow-y-auto bg-secondary/10 dark:bg-card/10 max-h-[500px]">
-            <div className="border-b border-border/40 pb-2 mb-4 flex items-center justify-between">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-                <Eye size={12} /> 实时预览
-              </span>
-            </div>
-            <div 
+          <div ref={previewPaneRef} className="flex-1 p-6 min-h-0 overflow-y-auto bg-secondary/30 dark:bg-card/20 lg:border-l lg:border-border">
+            <div
               ref={previewRef}
-              className="prose-reader text-sm leading-relaxed max-w-none text-foreground break-words"
+              className="prose-reader text-base leading-relaxed max-w-none text-foreground break-words"
               dangerouslySetInnerHTML={{ __html: htmlContent }}
             />
           </div>

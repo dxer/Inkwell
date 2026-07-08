@@ -79,6 +79,7 @@ function AdminSettings() {
   const [twitterUrl, setTwitterUrl] = useState(settings.twitter_url || "");
   const [showGithub, setShowGithub] = useState(settings.show_github !== "false");
   const [showTwitter, setShowTwitter] = useState(settings.show_twitter !== "false");
+  const [showCoverImage, setShowCoverImage] = useState(settings.show_cover_image !== "false");
   const [rssUrl, setRssUrl] = useState(settings.rss_url || "");
   const [icpText, setIcpText] = useState(settings.icp_text || "");
   const [googleAnalyticsId, setGoogleAnalyticsId] = useState(settings.google_analytics_id || "");
@@ -100,6 +101,7 @@ function AdminSettings() {
       twitter_url: twitterUrl,
       show_github: showGithub ? "true" : "false",
       show_twitter: showTwitter ? "true" : "false",
+      show_cover_image: showCoverImage ? "true" : "false",
       rss_url: rssUrl,
       icp_text: icpText,
       google_analytics_id: googleAnalyticsId,
@@ -179,6 +181,19 @@ function AdminSettings() {
           <div className="flex flex-col gap-2">
             <Label htmlFor="page_size">每页文章数</Label>
             <Input id="page_size" type="number" min={1} max={100} value={pageSize} onChange={(e) => setPageSize(e.target.value)} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>前台列表封面图</Label>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground select-none h-9">
+              <input
+                type="checkbox"
+                id="show_cover_image"
+                checked={showCoverImage}
+                onChange={(e) => setShowCoverImage(e.target.checked)}
+                className="rounded border-input text-primary focus:ring-primary/40 focus:ring-offset-0 cursor-pointer"
+              />
+              <label htmlFor="show_cover_image" className="cursor-pointer">在首页 / 分类 / 标签列表展示封面图</label>
+            </div>
           </div>
         </div>
       </div>

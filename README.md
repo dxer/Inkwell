@@ -154,6 +154,48 @@ src/
 └── styles.css       # 前台主题样式
 ```
 
+## 外部博客同步（Hugo / Hexo）
+
+系统提供基于 API Key 的同步接口，可将 Hugo / Hexo 等静态博客的文章导入 Inkwell。
+
+### 1. 创建 API Key
+
+登录管理后台，进入 **API 密钥** 页面（`/admin/apikeys`），填写名称后点击「生成密钥」。
+密钥明文**仅展示一次**，请立即复制保存。删除密钥会使对应来源的同步立即失效。
+
+### 2. 调用同步接口
+
+```bash
+curl -X POST https://your-domain/api/sync \
+  -H "Authorization: Bearer ink_xxxxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "posts": [
+      {
+        "title": "我的第一篇文章",
+        "slug": "my-first-post",
+        "content": "# 正文 Markdown ...",
+        "description": "摘要",
+        "tags": ["随笔", "技术"],
+        "categories": ["生活"],
+        "coverImage": "https://.../cover.jpg",
+        "status": "published",
+        "date": "2024-01-01"
+      }
+    ]
+  }'
+```
+
+- 鉴权：请求头 `Authorization: Bearer <apikey>`。
+- 支持一次提交多篇文章（JSON 中的 `posts` 数组）。
+- 若提供了含 YAML frontmatter 的 `markdown` 字段（Hugo / Hexo 典型格式），
+  系统会自动解析 `title` / `slug` / `description` / `tags` / `categories` /
+  `cover` / `draft` / `date` 等元信息，无需逐个字段填写。
+- 按 `slug` 判定文章是否存在：已存在则更新，否则新建。同名标签会自动复用或创建；
+  分类若不存在则按默认色自动创建。
+- 返回示例：`{ "synced": 1, "failed": 0, "results": [{ "slug": "...", "action": "created" }], "errors": [] }`
+  （部分失败时 HTTP 状态码为 `207`）。
+
 ## License
 
 MIT

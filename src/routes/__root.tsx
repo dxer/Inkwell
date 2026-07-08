@@ -5,7 +5,8 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { getDb } from '../lib/db'
-import { siteSettings } from '../lib/schema'
+import { siteSettings, aiModels } from '../lib/schema'
+import { generateId } from '../lib/id'
 import appCss from '../styles.css?url'
 import adminCss from '../admin.css?url'
 
@@ -20,6 +21,7 @@ const DEFAULT_SETTINGS = [
   { key: "twitter_url", value: "https://x.com" },
   { key: "show_github", value: "true" },
   { key: "show_twitter", value: "true" },
+  { key: "show_cover_image", value: "true" },
   { key: "rss_url", value: "" },
   { key: "icp_text", value: "© 2026 AI-Native Blog. All Rights Reserved." },
   { key: "google_analytics_id", value: "" },
@@ -30,10 +32,13 @@ async function initDatabase(db: any) {
 	// D1-compatible SQL without IF NOT EXISTS for indexes
 	const statements = [
 		`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, slug TEXT NOT NULL, parent_id TEXT, sort_order INTEGER DEFAULT 0, color TEXT DEFAULT '#C15F3C' NOT NULL)`,
-		`CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, slug TEXT NOT NULL, description TEXT, cover_image TEXT, content_blocks TEXT NOT NULL, content_html TEXT NOT NULL, category_id TEXT, status TEXT DEFAULT 'draft', views INTEGER DEFAULT 0 NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER)`,
+		`CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, slug TEXT NOT NULL, description TEXT, keywords TEXT, cover_image TEXT, content_blocks TEXT NOT NULL, content_html TEXT NOT NULL, category_id TEXT, status TEXT DEFAULT 'draft', views INTEGER DEFAULT 0 NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER)`,
 		`CREATE TABLE IF NOT EXISTS posts_to_tags (post_id TEXT, tag_id TEXT, PRIMARY KEY(post_id, tag_id))`,
 		`CREATE TABLE IF NOT EXISTS site_settings (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL, updated_at INTEGER)`,
 		`CREATE TABLE IF NOT EXISTS tags (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, slug TEXT NOT NULL)`,
+		`CREATE TABLE IF NOT EXISTS api_keys (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, key_prefix TEXT NOT NULL, key_hash TEXT NOT NULL, created_at INTEGER NOT NULL, last_used_at INTEGER)`,
+		`CREATE TABLE IF NOT EXISTS ai_models (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, provider TEXT DEFAULT 'cloudflare', model_id TEXT NOT NULL, base_url TEXT, api_key TEXT, capabilities TEXT DEFAULT 'text', is_default_text INTEGER DEFAULT 0, is_default_image INTEGER DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER)`,
+		`CREATE TABLE IF NOT EXISTS ai_prompts (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, kind TEXT DEFAULT 'text', content TEXT NOT NULL, model_id TEXT, is_default INTEGER DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER)`,
 	]
 
 	// Create indexes separately (ignore if already exists)
@@ -52,6 +57,11 @@ async function initDatabase(db: any) {
 	} catch (e) {
 		// Index may already exist, ignore
 	}
+	try {
+		await db.run(`CREATE UNIQUE INDEX IF NOT EXISTS api_keys_hash_unique ON api_keys (key_hash)`)
+	} catch (e) {
+		// Index may already exist, ignore
+	}
 
 	for (const stmt of statements) {
 		try {
@@ -59,6 +69,16 @@ async function initDatabase(db: any) {
 		} catch (err) {
 			console.error('Failed to execute:', stmt, err)
 		}
+	}
+
+	// Lightweight migration: add keywords column to existing posts tables.
+	// CREATE TABLE IF NOT EXISTS won't add columns to an already-existing table,
+	// so we ALTER explicitly and ignore the "duplicate column" error on fresh DBs
+	// that already created the table with the column included.
+	try {
+		await db.run(`ALTER TABLE posts ADD COLUMN keywords TEXT`)
+	} catch (e) {
+		// Column already exists — expected on fresh databases.
 	}
 }
 
@@ -94,6 +114,74 @@ export const getSiteSettingsFn = createServerFn({ method: 'GET' })
 			// Table doesn't exist, initialize database
 			console.log('Initializing database...');
 			await initDatabase(db);
+		}
+
+		// Lightweight migration: ensure api_keys table exists on databases
+		// created before the API sync feature was introduced. initDatabase
+		// only runs when site_settings is missing, so this must run
+		// unconditionally to upgrade existing DBs. IF NOT EXISTS is idempotent.
+		try {
+			await db.run(`CREATE TABLE IF NOT EXISTS api_keys (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, key_prefix TEXT NOT NULL, key_hash TEXT NOT NULL, created_at INTEGER NOT NULL, last_used_at INTEGER)`)
+			await db.run(`CREATE UNIQUE INDEX IF NOT EXISTS api_keys_hash_unique ON api_keys (key_hash)`)
+		} catch (e) {
+			// Best-effort; ignore duplicate-table / duplicate-index errors.
+		}
+
+		// Lightweight migration: ensure ai_models / ai_prompts tables exist on
+		// databases created before the AI module was introduced. Runs
+		// unconditionally (IF NOT EXISTS is idempotent) so existing DBs upgrade.
+		try {
+			await db.run(`CREATE TABLE IF NOT EXISTS ai_models (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, provider TEXT DEFAULT 'cloudflare', model_id TEXT NOT NULL, base_url TEXT, api_key TEXT, capabilities TEXT DEFAULT 'text', is_default_text INTEGER DEFAULT 0, is_default_image INTEGER DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER)`)
+			await db.run(`CREATE TABLE IF NOT EXISTS ai_prompts (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, kind TEXT DEFAULT 'text', content TEXT NOT NULL, model_id TEXT, is_default INTEGER DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER)`)
+		} catch (e) {
+			// Best-effort; ignore duplicate-table errors.
+		}
+
+		// Lightweight migration: add is_default column to ai_prompts on DBs
+		// created before this column existed. Ignore "duplicate column" errors.
+		try {
+			await db.run(`ALTER TABLE ai_prompts ADD COLUMN is_default INTEGER DEFAULT 0`)
+		} catch (e) {
+			// Column already exists — expected on fresh databases.
+		}
+
+		// Seed two default Cloudflare models on first run so the existing
+		// one-click AI behavior keeps working out of the box.
+		try {
+			const existingModels = await db.select().from(aiModels).limit(1);
+			if (existingModels.length === 0) {
+				const now = new Date();
+				await db.insert(aiModels).values([
+					{
+						id: generateId(),
+						name: "Cloudflare Llama 3.1 8B",
+						provider: "cloudflare",
+						modelId: "@cf/meta/llama-3.1-8b-instruct",
+						baseUrl: null,
+						apiKey: null,
+						capabilities: "text",
+						isDefaultText: true,
+						isDefaultImage: false,
+						createdAt: now,
+						updatedAt: now,
+					},
+					{
+						id: generateId(),
+						name: "Cloudflare SDXL",
+						provider: "cloudflare",
+						modelId: "@cf/stabilityai/stable-diffusion-xl-base-1.0",
+						baseUrl: null,
+						apiKey: null,
+						capabilities: "image",
+						isDefaultText: false,
+						isDefaultImage: true,
+						createdAt: now,
+						updatedAt: now,
+					},
+				]);
+			}
+		} catch (e) {
+			// Best-effort; ignore if seeding races or tables are unavailable.
 		}
 
         let settingsList = await db.select().from(siteSettings);

@@ -169,7 +169,7 @@ function CategoryPage() {
           <>
             <div className="flex flex-col divide-y divide-border">
               {posts.map((post, index) => (
-                <ArchiveCard key={post.id} post={post} index={index} isLatest={index === 0 && pagination.page === 1} />
+                <ArchiveCard key={post.id} post={post} index={index} isLatest={index === 0 && pagination.page === 1} showCover={settings.show_cover_image !== "false"} />
               ))}
             </div>
 
@@ -205,7 +205,7 @@ function CategoryPage() {
   )
 }
 
-function ArchiveCard({ post, index, isLatest }: { post: any; index: number; isLatest: boolean }) {
+function ArchiveCard({ post, index, isLatest, showCover }: { post: any; index: number; isLatest: boolean; showCover: boolean }) {
   const [ref, inView] = useInView<HTMLDivElement>()
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
@@ -258,7 +258,7 @@ function ArchiveCard({ post, index, isLatest }: { post: any; index: number; isLa
         </Link>
       </h2>
 
-      {post.coverImage && (
+      {post.coverImage && showCover && (
         <Link to="/posts/$slug" params={{ slug: post.slug }} className="block rounded-lg overflow-hidden border border-border mb-4 bg-secondary">
           <img
             src={post.coverImage}

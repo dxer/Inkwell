@@ -26,6 +26,7 @@ export const getPostFn = createServerFn({ method: 'GET' })
         title: posts.title,
         slug: posts.slug,
         description: posts.description,
+        keywords: posts.keywords,
         coverImage: posts.coverImage,
         contentHtml: posts.contentHtml,
         views: posts.views,
@@ -94,10 +95,12 @@ export const Route = createFileRoute('/posts/$slug')({
     const title = post ? `${post.title} - ${settings.site_title || "智能无服务器博客"}` : (settings.site_title || "智能无服务器博客");
     const description = post?.description || settings.site_description || "";
     const coverImage = post?.coverImage || "";
+    const keywords = post?.keywords || "";
 
     return {
       meta: [
         { name: 'description', content: description },
+        { name: 'keywords', content: keywords },
         { title: title },
         // Open Graph / Facebook
         { property: 'og:title', content: title },
