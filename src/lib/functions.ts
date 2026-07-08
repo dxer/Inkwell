@@ -5,8 +5,8 @@ import type { ResolvedModel } from './ai'
 import { putAsset } from './storage'
 import { generateId } from './id'
 import { getDb } from './db'
-import { apiKeys, aiModels, aiPrompts } from './schema'
-import { desc, eq, and } from 'drizzle-orm'
+import { apiKeys, aiModels, aiPrompts, posts, categories, tags } from './schema'
+import { desc, eq, and, count, sql } from 'drizzle-orm'
 import { generateApiKey } from './apikey'
 import { encryptSecret, decryptSecret, maskSecret } from './crypto'
 
@@ -330,7 +330,7 @@ export const uploadAssetFn = createServerFn({ method: 'POST' })
     const extension = data.name.split('.').pop() || 'png';
     const cleanExtension = extension.replace(/[^a-zA-Z0-9]/g, '');
     const key = `${generateId()}.${cleanExtension || 'png'}`;
-    const url = await putAsset(key, buffer, data.type);
+    const url = await putAsset(key, buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), data.type);
     return { url };
   });
 
@@ -388,4 +388,68 @@ export const deleteApiKeyFn = createServerFn({ method: 'POST' })
     const db = await getDb();
     await db.delete(apiKeys).where(eq(apiKeys.id, data.id));
     return { success: true };
+  });
+
+// ---------------------------------------------------------------------------
+// Admin dashboard stats
+// ---------------------------------------------------------------------------
+
+export const getAdminStatsFn = createServerFn({ method: 'GET' })
+  .handler(async () => {
+    const db = await getDb();
+
+    const totalPostsRes = await db.select({ val: count() }).from(posts);
+    const totalPosts = totalPostsRes[0]?.val || 0;
+
+    const draftsRes = await db.select({ val: count() }).from(posts).where(eq(posts.status, 'draft'));
+    const drafts = draftsRes[0]?.val || 0;
+
+    const publishedRes = await db.select({ val: count() }).from(posts).where(eq(posts.status, 'published'));
+    const published = publishedRes[0]?.val || 0;
+
+    const totalViewsRes = await db.select({ val: sql<number>`sum(${posts.views})` }).from(posts);
+    const totalViews = Number(totalViewsRes[0]?.val) || 0;
+
+    const totalCategoriesRes = await db.select({ val: count() }).from(categories);
+    const totalCategories = totalCategoriesRes[0]?.val || 0;
+
+    const totalTagsRes = await db.select({ val: count() }).from(tags);
+    const totalTags = totalTagsRes[0]?.val || 0;
+
+    const recentDrafts = await db
+      .select({
+        id: posts.id,
+        title: posts.title,
+        updatedAt: posts.updatedAt,
+        createdAt: posts.createdAt,
+      })
+      .from(posts)
+      .where(eq(posts.status, 'draft'))
+      .orderBy(desc(posts.updatedAt), desc(posts.createdAt))
+      .limit(5);
+
+    const popularPosts = await db
+      .select({
+        id: posts.id,
+        title: posts.title,
+        views: posts.views,
+        createdAt: posts.createdAt,
+      })
+      .from(posts)
+      .where(eq(posts.status, 'published'))
+      .orderBy(desc(posts.views))
+      .limit(5);
+
+    return {
+      stats: {
+        totalPosts,
+        drafts,
+        published,
+        totalViews,
+        totalCategories,
+        totalTags,
+      },
+      recentDrafts,
+      popularPosts,
+    };
   });

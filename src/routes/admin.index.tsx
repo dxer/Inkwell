@@ -1,79 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { createServerFn } from '@tanstack/react-start'
-import { getDb } from '../lib/db'
-import { posts, categories, tags } from '../lib/schema'
-import { count, eq, desc, sql } from 'drizzle-orm'
 import { FileText, FileEdit, FileCheck, FolderTree, Tags, ArrowRight, PenLine, Settings, Eye, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-
-export const getAdminStatsFn = createServerFn({ method: 'GET' })
-  .handler(async () => {
-    const db = await getDb();
-
-    // Total posts
-    const totalPostsRes = await db.select({ val: count() }).from(posts);
-    const totalPosts = totalPostsRes[0]?.val || 0;
-
-    // Drafts
-    const draftsRes = await db.select({ val: count() }).from(posts).where(eq(posts.status, 'draft'));
-    const drafts = draftsRes[0]?.val || 0;
-
-    // Published
-    const publishedRes = await db.select({ val: count() }).from(posts).where(eq(posts.status, 'published'));
-    const published = publishedRes[0]?.val || 0;
-
-    // Total Views sum
-    const totalViewsRes = await db.select({ val: sql<number>`sum(${posts.views})` }).from(posts);
-    const totalViews = Number(totalViewsRes[0]?.val) || 0;
-
-    // Categories
-    const totalCategoriesRes = await db.select({ val: count() }).from(categories);
-    const totalCategories = totalCategoriesRes[0]?.val || 0;
-
-    // Tags
-    const totalTagsRes = await db.select({ val: count() }).from(tags);
-    const totalTags = totalTagsRes[0]?.val || 0;
-
-    // 5 Recent Drafts
-    const recentDrafts = await db
-      .select({
-        id: posts.id,
-        title: posts.title,
-        updatedAt: posts.updatedAt,
-        createdAt: posts.createdAt,
-      })
-      .from(posts)
-      .where(eq(posts.status, 'draft'))
-      .orderBy(desc(posts.updatedAt), desc(posts.createdAt))
-      .limit(5);
-
-    // Top 5 Popular Posts
-    const popularPosts = await db
-      .select({
-        id: posts.id,
-        title: posts.title,
-        views: posts.views,
-        createdAt: posts.createdAt,
-      })
-      .from(posts)
-      .where(eq(posts.status, 'published'))
-      .orderBy(desc(posts.views))
-      .limit(5);
-
-    return {
-      stats: {
-        totalPosts,
-        drafts,
-        published,
-        totalViews,
-        totalCategories,
-        totalTags,
-      },
-      recentDrafts,
-      popularPosts,
-    };
-  });
+import { getAdminStatsFn } from '../lib/functions'
 
 export const Route = createFileRoute('/admin/')({
   loader: async () => {
