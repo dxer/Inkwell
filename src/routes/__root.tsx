@@ -127,6 +127,13 @@ export const getSiteSettingsFn = createServerFn({ method: 'GET' })
 			// Best-effort; ignore duplicate-table / duplicate-index errors.
 		}
 
+		// Lightweight migration: add columns that may be missing on DBs created
+		// before they were introduced. initDatabase only runs when site_settings
+		// is missing, so these ALTERs must run unconditionally. Errors are
+		// ignored (column already exists on fresh DBs).
+		try { await db.run(`ALTER TABLE posts ADD COLUMN keywords TEXT`) } catch (e) {}
+		try { await db.run(`ALTER TABLE categories ADD COLUMN color TEXT DEFAULT '#cc785c'`) } catch (e) {}
+
 		// Lightweight migration: ensure ai_models / ai_prompts tables exist on
 		// databases created before the AI module was introduced. Runs
 		// unconditionally (IF NOT EXISTS is idempotent) so existing DBs upgrade.
