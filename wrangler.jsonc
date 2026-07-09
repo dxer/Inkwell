@@ -21,6 +21,6 @@
     "remote": true
   },
   "vars": {
-    "AI_ENC_KEY": "Wj9D65JHXmCOeSKOhXvhtt50x0ZHk+sxdPT8qUxVsEA="
+    "ADMIN_USERNAME": "admin"
   }
 }

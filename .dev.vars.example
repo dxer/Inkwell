@@ -1,0 +1,22 @@
+# Local development secrets / config (read by miniflare / vite dev).
+# Copy this file to `.dev.vars` and fill in real values. `.dev.vars` is
+# gitignored — never commit it. For PRODUCTION, use `wrangler secret put`
+# instead (the values below are only used locally).
+
+# Non-secret: admin login username (also settable via wrangler.jsonc "vars").
+ADMIN_USERNAME=admin
+
+# Salted PBKDF2 hash of the admin password.
+# Generate with: node tools/gen-admin-hash.mjs "your_password"
+# Then in production run: wrangler secret put ADMIN_PASSWORD_HASH
+ADMIN_PASSWORD_HASH=
+
+# Session cookie HMAC key. Use a long random string, e.g.:
+#   openssl rand -base64 32
+# Production: wrangler secret put SESSION_SECRET
+SESSION_SECRET=
+
+# AES-256-GCM key (base64, 32 bytes) used to encrypt stored AI model API keys.
+# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+# Production: wrangler secret put AI_ENC_KEY
+AI_ENC_KEY=
