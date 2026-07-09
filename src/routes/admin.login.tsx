@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, redirect } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { getAuthCredentials, signSession } from '../lib/auth'
+import { verifyAdminCredentials, signSession, getAuthCredentials } from '../lib/auth'
 import { checkAuthFn } from '../lib/functions'
 import { PenLine, AlertCircle, Loader2 } from 'lucide-react'
 import React, { useState } from 'react'
@@ -9,14 +9,14 @@ export const loginFn = createServerFn({ method: 'POST' })
   .validator((data: Record<string, string>) => data)
   .handler(async ({ data }) => {
     const { username, password } = data;
-    const creds = await getAuthCredentials();
 
-    if (username !== creds.username || password !== creds.password) {
+    if (!(await verifyAdminCredentials(username, password))) {
       throw new Error("用户名或密码错误");
     }
-    
+
+    const { secret } = await getAuthCredentials();
     const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
-    const token = await signSession({ username, expiresAt }, creds.secret);
+    const token = await signSession({ username, expiresAt }, secret);
     
     const { setCookie } = await import('@tanstack/react-start/server');
     setCookie('inkwell_session', token, {
