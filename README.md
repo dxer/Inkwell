@@ -56,8 +56,9 @@ cp .env.example .env
 | 变量 | 说明 | 默认值 |
 |---|---|---|
 | `ADMIN_USERNAME` | 管理后台登录用户名 | `admin` |
-| `ADMIN_PASSWORD` | 管理后台登录密码 | `admin_secure_password` |
-| `SESSION_SECRET` | Session Cookie 加密密钥（至少 32 字符） | 见 `.env.example` |
+| `ADMIN_PASSWORD_HASH` | 登录密码的 PBKDF2 加盐哈希（`node tools/gen-admin-hash.mjs "密码"` 生成） | 见 `.dev.vars.example` |
+| `SESSION_SECRET` | Session Cookie 加密密钥（至少 32 字符） | 见 `.dev.vars.example` |
+| `AI_ENC_KEY` | 加密 AI 模型 API Key 的密钥（base64 32 字节） | 见 `.dev.vars.example` |
 
 ### 4. 启动开发服务器
 
@@ -116,13 +117,21 @@ pnpm wrangler d1 migrations apply inkwell_db --remote
 }
 ```
 
-### 3. 设置生产环境变量
+### 3. 设置生产密钥（Secrets）
+
+密码请用加盐哈希，不要直接填明文（否则登录会被拒绝）：
 
 ```bash
-pnpm wrangler secret put ADMIN_USERNAME
-pnpm wrangler secret put ADMIN_PASSWORD
+# 1. 生成密码哈希，复制输出
+node tools/gen-admin-hash.mjs "你的强密码"
+
+# 2. 逐个交互式粘贴（不写进仓库）
+pnpm wrangler secret put ADMIN_PASSWORD_HASH
 pnpm wrangler secret put SESSION_SECRET
+pnpm wrangler secret put AI_ENC_KEY
 ```
+
+`ADMIN_USERNAME` 已在 `wrangler.jsonc` 的 `vars` 中配置（默认 `admin`），如需修改可编辑该文件。
 
 ### 4. 构建并部署
 

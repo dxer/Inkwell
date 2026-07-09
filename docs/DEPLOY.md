@@ -47,15 +47,35 @@ Application entrypoint: 留空（自动检测）
 
 **重要**：确保 D1 绑定显示了有效的 Database ID，如果没有，请重新选择数据库。
 
-**Environment variables**:
+**Environment variables / Secrets**:
 
-| 变量名 | 值 | 说明 |
-|--------|-----|------|
-| `ADMIN_USERNAME` | admin | 后台登录用户名 |
-| `ADMIN_PASSWORD` | 设置密码 | 后台登录密码 |
-| `SESSION_SECRET` | 生成随机字符串 | 至少32字符 |
+后台凭证与密钥分两类：**普通变量（Variables）** 和 **加密密钥（Secrets，勾选 Encrypt）**。
+密码**不要**直接填明文，而要用加盐哈希（`ADMIN_PASSWORD_HASH`），否则登录会被拒绝。
 
-点击 **Add variable** 添加每个变量。
+| 名称 | 类型 | 值 | 说明 |
+|------|------|-----|------|
+| `ADMIN_USERNAME` | Variable | `admin` | 后台登录用户名 |
+| `ADMIN_PASSWORD_HASH` | **Secret (Encrypt)** | `pbkdf2$sha256$...` | 密码的 PBKDF2 哈希，见下方生成方法 |
+| `SESSION_SECRET` | **Secret (Encrypt)** | 随机串（≥32 字符） | 会话 Cookie 签名密钥，`openssl rand -base64 32` |
+| `AI_ENC_KEY` | **Secret (Encrypt)** | base64 32 字节 | 加密 AI 模型 API Key 的密钥，见下方生成方法 |
+
+点击 **Add variable / Add secret** 逐项添加。
+
+**生成 `ADMIN_PASSWORD_HASH`**（在本地仓库目录执行）：
+
+```bash
+node tools/gen-admin-hash.mjs "你的强密码"
+# 输出形如 pbkdf2$sha256$200000$<salt>$<hash>，粘到 ADMIN_PASSWORD_HASH
+```
+
+**生成 `AI_ENC_KEY`**：
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+> 用 CLI 部署时等效命令：`wrangler secret put ADMIN_PASSWORD_HASH` / `wrangler secret put SESSION_SECRET` / `wrangler secret put AI_ENC_KEY`（交互式粘贴值，不写进仓库）。
+> 本地开发见仓库根目录 `.dev.vars.example`（复制为 `.dev.vars` 填写）。
 
 **Variables**:
 
@@ -69,7 +89,9 @@ NODE_VERSION: 20
 
 部署成功后会显示你的 Worker 域名（如 `inkwell.你的账户.workers.dev`）。
 
-### 步骤 5：初始化数据库
+### 步骤 5：初始化数据库（可选）
+
+应用首次访问时会**自动建表并迁移**（见 `src/routes/__root.tsx` 的 `getSiteSettingsFn`），因此本步骤通常**可跳过**。仅在需要手动预建库时才执行：
 
 1. 进入 **Workers & Pages** → **D1** → 选择 `inkwell_db`
 2. 点击右上角的 **Console**
