@@ -61,6 +61,10 @@ function unescapeHtml(s: string): string {
     .replace(/&#39;/g, "'");
 }
 
+function escapeAttr(s: string): string {
+  return s.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 /**
  * Apply server-side syntax highlighting to article HTML.
  *
@@ -95,6 +99,9 @@ export function highlightHtml(html: string): string {
     }
 
     const langClass = lang ? ` language-${lang}` : "";
-    return `<pre><code class="hljs${langClass}">${highlighted}</code></pre>`;
+    const langLabel = lang ? `<span class="code-lang-label">${lang}</span>` : "";
+    const copyIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+    const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    return `<div class="code-block-wrapper">${langLabel}<button type="button" class="copy-code-btn" aria-label="复制代码" data-copy-icon="${escapeAttr(copyIcon)}" data-check-icon="${escapeAttr(checkIcon)}">${copyIcon}</button><pre><code class="hljs${langClass}">${highlighted}</code></pre></div>`;
   });
 }
