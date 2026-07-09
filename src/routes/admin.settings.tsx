@@ -80,6 +80,7 @@ function AdminSettings() {
   const [showGithub, setShowGithub] = useState(settings.show_github !== "false");
   const [showTwitter, setShowTwitter] = useState(settings.show_twitter !== "false");
   const [showCoverImage, setShowCoverImage] = useState(settings.show_cover_image !== "false");
+  const [showViews, setShowViews] = useState(settings.show_views !== "false");
   const [rssUrl, setRssUrl] = useState(settings.rss_url || "");
   const [icpText, setIcpText] = useState(settings.icp_text || "");
   const [googleAnalyticsId, setGoogleAnalyticsId] = useState(settings.google_analytics_id || "");
@@ -102,6 +103,7 @@ function AdminSettings() {
       show_github: showGithub ? "true" : "false",
       show_twitter: showTwitter ? "true" : "false",
       show_cover_image: showCoverImage ? "true" : "false",
+      show_views: showViews ? "true" : "false",
       rss_url: rssUrl,
       icp_text: icpText,
       google_analytics_id: googleAnalyticsId,
@@ -193,6 +195,19 @@ function AdminSettings() {
                 className="rounded border-input text-primary focus:ring-primary/40 focus:ring-offset-0 cursor-pointer"
               />
               <label htmlFor="show_cover_image" className="cursor-pointer">在首页 / 分类 / 标签列表展示封面图</label>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>前台文章访问量</Label>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground select-none h-9">
+              <input
+                type="checkbox"
+                id="show_views"
+                checked={showViews}
+                onChange={(e) => setShowViews(e.target.checked)}
+                className="rounded border-input text-primary focus:ring-primary/40 focus:ring-offset-0 cursor-pointer"
+              />
+              <label htmlFor="show_views" className="cursor-pointer">在文章页面显示阅读次数</label>
             </div>
           </div>
         </div>

@@ -143,7 +143,7 @@ function Home() {
         <>
           <div className="flex flex-col divide-y divide-border">
             {posts.map((post, index) => (
-              <HomeArticle key={post.id} post={post} index={index} isLatest={index === 0 && pagination.page === 1} showCover={settings.show_cover_image !== "false"} />
+              <HomeArticle key={post.id} post={post} index={index} isLatest={index === 0 && pagination.page === 1} showCover={settings.show_cover_image !== "false"} showViews={settings.show_views !== "false"} />
             ))}
           </div>
 
@@ -176,7 +176,7 @@ function Home() {
   )
 }
 
-function HomeArticle({ post, index, isLatest, showCover }: { post: any; index: number; isLatest: boolean; showCover: boolean }) {
+function HomeArticle({ post, index, isLatest, showCover, showViews }: { post: any; index: number; isLatest: boolean; showCover: boolean; showViews: boolean }) {
   const [ref, inView] = useInView<HTMLDivElement>()
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
@@ -211,10 +211,12 @@ function HomeArticle({ post, index, isLatest, showCover }: { post: any; index: n
         <time className="text-xs text-muted-foreground tabular-nums" dateTime={isoDate}>
           {isoDate}
         </time>
-        <span className="text-xs text-muted-foreground flex items-center gap-1 ml-1.5 tabular-nums">
-          <Eye size={12} strokeWidth={2.5} />
-          {post.views || 0}
-        </span>
+        {showViews && (
+          <span className="text-xs text-muted-foreground flex items-center gap-1 ml-1.5 tabular-nums">
+            <Eye size={12} strokeWidth={2.5} />
+            {post.views || 0}
+          </span>
+        )}
       </div>
 
       <h2

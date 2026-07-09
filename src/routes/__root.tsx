@@ -22,6 +22,7 @@ const DEFAULT_SETTINGS = [
   { key: "show_github", value: "true" },
   { key: "show_twitter", value: "true" },
   { key: "show_cover_image", value: "true" },
+  { key: "show_views", value: "true" },
   { key: "rss_url", value: "" },
   { key: "icp_text", value: "© 2026 AI-Native Blog. All Rights Reserved." },
   { key: "google_analytics_id", value: "" },

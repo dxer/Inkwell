@@ -1,84 +1,109 @@
-"use client";
-
 import { useEffect } from "react";
-import hljs from "highlight.js";
-
-const COPY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
-const CHECK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
 /**
- * A client component that scans the DOM inside the article text area to:
- * 1. Initialize highlight.js for raw code blocks.
- * 2. Dynamically inject copy buttons into each <pre> code element container.
+ * Copy-button injector for code blocks.
+ *
+ * Syntax highlighting is done server-side (lib/highlight.ts). This component
+ * only adds a copy button. Each <pre> is wrapped in a relative-positioned
+ * container div so the button stays fixed at the corner even when the code
+ * scrolls horizontally (overflow-x: auto on <pre> would clip/hide an
+ * absolutely-positioned child).
  */
-export function CodeBlockEnhancer() {
+export function CodeBlockEnhancer({ html }: { html: string }) {
   useEffect(() => {
-    // 1. Run highlight.js syntax highlighting
-    const codeElements = document.querySelectorAll(".prose-reader pre code");
-    codeElements.forEach((el) => {
-      // Check both class and dataset to prevent double-highlighting warning
-      if (!el.classList.contains("hljs") && !(el as HTMLElement).dataset.highlighted) {
-        hljs.highlightElement(el as HTMLElement);
+    const root = document.querySelector(".prose-reader");
+    if (!root) return;
+
+    root.querySelectorAll("pre").forEach((pre) => {
+      // Skip if already wrapped
+      if (pre.parentElement?.classList.contains("code-block-wrapper")) return;
+
+      const codeEl = pre.querySelector("code");
+      const langMatch = codeEl?.className.match(/language-([\w-]+)/);
+      const lang = langMatch ? langMatch[1] : "";
+
+      // Create wrapper
+      const wrapper = document.createElement("div");
+      wrapper.className = "code-block-wrapper";
+      wrapper.style.cssText = "position:relative;";
+
+      // Insert wrapper before pre, then move pre inside
+      pre.parentNode!.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
+
+      // Language label (top-left)
+      if (lang) {
+        const label = document.createElement("span");
+        label.textContent = lang;
+        label.style.cssText =
+          "position:absolute;top:6px;left:14px;font-size:11px;font-family:monospace;" +
+          "color:rgba(128,128,128,0.65);text-transform:uppercase;letter-spacing:0.05em;" +
+          "pointer-events:none;z-index:10;user-select:none;";
+        wrapper.appendChild(label);
       }
-    });
 
-    // 2. Inject copy buttons into code block containers (<pre>)
-    const preElements = document.querySelectorAll(".prose-reader pre");
-    preElements.forEach((pre) => {
-      // Skip if already enhanced
-      if (pre.querySelector(".copy-code-button")) return;
+      // Copy button (top-right) — on the wrapper, not inside <pre>
+      const btn = document.createElement("button");
+      btn.textContent = "复制";
+      btn.style.cssText =
+        "position:absolute;top:6px;right:8px;padding:3px 10px;border-radius:6px;" +
+        "font-size:11px;background:rgba(128,128,128,0.15);border:1px solid rgba(128,128,128,0.2);" +
+        "color:rgba(128,128,128,0.8);cursor:pointer;z-index:10;transition:all .15s ease;" +
+        "backdrop-filter:blur(4px);line-height:1.4;";
+      btn.setAttribute("aria-label", "复制代码");
 
-      // Make the container relative to hold the absolute button
-      pre.classList.add("relative", "group");
-
-      // Create the copy button
-      const button = document.createElement("button");
-      button.className = "copy-code-button absolute top-3 right-3 p-1.5 rounded-md bg-white/90 dark:bg-neutral-800/90 hover:bg-primary hover:text-white border border-gray-200 dark:border-neutral-600 text-gray-600 dark:text-gray-300 transition-all duration-200 cursor-pointer active:scale-90 z-10 shadow-sm";
-      button.setAttribute("aria-label", "Copy code");
-      button.innerHTML = COPY_SVG;
-
-      // Add click handler
-      button.addEventListener("click", () => {
-        const codeElement = pre.querySelector("code");
-        if (!codeElement) return;
-
-        // Use textContent instead of innerText for better compatibility
-        const codeText = codeElement.textContent || "";
-
-        const copyText = async () => {
-          try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-              await navigator.clipboard.writeText(codeText);
-            } else {
-              // Fallback for older browsers or non-HTTPS
-              const textarea = document.createElement("textarea");
-              textarea.value = codeText;
-              textarea.style.position = "fixed";
-              textarea.style.opacity = "0";
-              document.body.appendChild(textarea);
-              textarea.select();
-              document.execCommand("copy");
-              document.body.removeChild(textarea);
-            }
-
-            button.innerHTML = CHECK_SVG;
-            button.classList.add("text-primary", "border-primary/40", "bg-primary/5");
-
-            setTimeout(() => {
-              button.innerHTML = COPY_SVG;
-              button.classList.remove("text-primary", "border-primary/40", "bg-primary/5");
-            }, 2000);
-          } catch (err) {
-            console.error("Copy failed:", err);
-          }
-        };
-
-        copyText();
+      btn.addEventListener("mouseenter", () => {
+        btn.style.background = "var(--primary, #cc785c)";
+        btn.style.color = "#fff";
+        btn.style.borderColor = "var(--primary, #cc785c)";
+      });
+      btn.addEventListener("mouseleave", () => {
+        btn.style.background = "rgba(128,128,128,0.15)";
+        btn.style.color = "rgba(128,128,128,0.8)";
+        btn.style.borderColor = "rgba(128,128,128,0.2)";
       });
 
-      pre.appendChild(button);
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const codeElement = pre.querySelector("code");
+        if (!codeElement) return;
+        const codeText = codeElement.textContent || "";
+
+        const doCopy = async () => {
+          try {
+            if (navigator.clipboard?.writeText) {
+              await navigator.clipboard.writeText(codeText);
+            } else {
+              const ta = document.createElement("textarea");
+              ta.value = codeText;
+              ta.style.position = "fixed";
+              ta.style.opacity = "0";
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand("copy");
+              document.body.removeChild(ta);
+            }
+            btn.textContent = "✓ 已复制";
+            btn.style.background = "rgba(34,197,94,0.15)";
+            btn.style.color = "rgb(22,163,74)";
+            btn.style.borderColor = "rgba(34,197,94,0.3)";
+            setTimeout(() => {
+              btn.textContent = "复制";
+              btn.style.background = "rgba(128,128,128,0.15)";
+              btn.style.color = "rgba(128,128,128,0.8)";
+              btn.style.borderColor = "rgba(128,128,128,0.2)";
+            }, 2000);
+          } catch {
+            btn.textContent = "复制失败";
+            setTimeout(() => { btn.textContent = "复制"; }, 2000);
+          }
+        };
+        doCopy();
+      });
+
+      wrapper.appendChild(btn);
     });
-  }, []);
+  }, [html]);
 
   return null;
 }

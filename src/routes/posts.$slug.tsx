@@ -10,6 +10,7 @@ import { ReadingProgress } from '@/components/site/reading-progress'
 import { BackToTop } from '@/components/site/back-to-top'
 import { TableOfContents } from '@/components/site/table-of-contents'
 import { CodeBlockEnhancer } from '@/components/site/code-block-enhancer'
+import { highlightHtml } from '@/lib/highlight'
 import { useState, useEffect } from 'react'
 import { List, Eye } from 'lucide-react'
 
@@ -77,6 +78,9 @@ export const getPostFn = createServerFn({ method: 'GET' })
     for (const s of settingsList) {
       settings[s.key] = s.value;
     }
+
+    // Apply server-side syntax highlighting so the SSR HTML already has colors.
+    post.contentHtml = highlightHtml(post.contentHtml);
 
     return {
       post,
@@ -179,7 +183,7 @@ function PostDetail() {
       </aside>
 
       {/* Client-side syntax highlighting & Copy code block enhancements */}
-      <CodeBlockEnhancer />
+      <CodeBlockEnhancer html={post.contentHtml} />
 
       {/* SEO structured metadata */}
       <script
@@ -204,10 +208,12 @@ function PostDetail() {
             <time className="tabular-nums" dateTime={isoDate}>
               {isoDate}
             </time>
-            <span className="flex items-center gap-1 tabular-nums">
-              <Eye size={12} strokeWidth={2.5} />
-              {post.views || 0} 次阅读
-            </span>
+            {settings.show_views !== "false" && (
+              <span className="flex items-center gap-1 tabular-nums">
+                <Eye size={12} strokeWidth={2.5} />
+                {post.views || 0} 次阅读
+              </span>
+            )}
           </div>
 
           <h1

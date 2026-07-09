@@ -28,16 +28,17 @@ export function ThemeToggle() {
     window.setTimeout(() => root.classList.remove('theme-transition'), 350)
   }
 
-  // Before mounting, render a completely static button to ensure 100% hydration safety.
+  // Before mounting, render a static Moon icon as placeholder to avoid
+  // an empty gap. Moon is the safe default (matches light-mode SSR output).
   if (!mounted) {
     return (
       <button
         type="button"
         aria-label="切换主题"
         title="切换主题"
-        className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:translate-y-[1px]"
+        className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
       >
-        <span className="size-5" aria-hidden="true" />
+        <Moon className="size-5" aria-hidden="true" />
       </button>
     )
   }

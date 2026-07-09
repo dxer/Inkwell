@@ -163,7 +163,7 @@ function TagPage() {
           <>
             <div className="flex flex-col divide-y divide-border">
               {posts.map((post, index) => (
-                <ArchiveCard key={post.id} post={post} activeTagSlug={tag.slug} index={index} isLatest={index === 0 && pagination.page === 1} showCover={settings.show_cover_image !== "false"} />
+                <ArchiveCard key={post.id} post={post} activeTagSlug={tag.slug} index={index} isLatest={index === 0 && pagination.page === 1} showCover={settings.show_cover_image !== "false"} showViews={settings.show_views !== "false"} />
               ))}
             </div>
 
@@ -199,7 +199,7 @@ function TagPage() {
   )
 }
 
-function ArchiveCard({ post, activeTagSlug, index, isLatest, showCover }: { post: any; activeTagSlug: string; index: number; isLatest: boolean; showCover: boolean }) {
+function ArchiveCard({ post, activeTagSlug, index, isLatest, showCover, showViews }: { post: any; activeTagSlug: string; index: number; isLatest: boolean; showCover: boolean; showViews: boolean }) {
   const [ref, inView] = useInView<HTMLDivElement>()
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
@@ -234,10 +234,12 @@ function ArchiveCard({ post, activeTagSlug, index, isLatest, showCover }: { post
         <time className="text-xs text-muted-foreground tabular-nums" dateTime={isoDate}>
           {isoDate}
         </time>
-        <span className="text-xs text-muted-foreground flex items-center gap-1 ml-1.5 tabular-nums">
-          <Eye size={12} strokeWidth={2.5} />
-          {post.views || 0}
-        </span>
+        {showViews && (
+          <span className="text-xs text-muted-foreground flex items-center gap-1 ml-1.5 tabular-nums">
+            <Eye size={12} strokeWidth={2.5} />
+            {post.views || 0}
+          </span>
+        )}
       </div>
 
       <h2
