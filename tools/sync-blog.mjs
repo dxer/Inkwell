@@ -192,8 +192,13 @@ function asArray(v) {
 function extractMeta(file, raw) {
   const { data, body } = parseFrontmatter(raw);
 
-  const title = toStr(data.title) || path.basename(file).replace(/\.(md|markdown)$/i, "");
-  const slug = toStr(data.slug) || (Array.isArray(data.aliases) ? toStr(data.aliases[0]) : "");
+  const fileBase = path.basename(file).replace(/\.(md|markdown)$/i, "");
+  const title = toStr(data.title) || fileBase;
+  // slug 优先级：frontmatter slug > 文件名（去扩展名）> aliases
+  const slug =
+    toStr(data.slug) ||
+    fileBase ||
+    (Array.isArray(data.aliases) ? toStr(data.aliases[0]) : "");
   const description = toStr(data.description) || toStr(data.summary) || toStr(data.excerpt);
 
   const keywords = asArray(data.keywords);
@@ -420,7 +425,7 @@ async function main() {
     for (const { file, meta } of items) {
       console.log(`\n• ${file}`);
       console.log(`    标题 : ${meta.title}`);
-      console.log(`    slug : ${meta.slug || "(由标题生成)"}`);
+       console.log(`    slug : ${meta.slug || "(由文件名生成)"}`);
       console.log(`    描述 : ${meta.description || "(无)"}`);
       console.log(`    时间 : ${meta.date || "(无)"}`);
       console.log(`    关键字: ${meta.keywords || "(无)"}`);
@@ -466,6 +471,7 @@ async function main() {
         markdown: raw,
         title: meta.title,
         slug: meta.slug,
+        filename: path.basename(file),
         description: meta.description,
         keywords: meta.keywords,
         tags: meta.tags,

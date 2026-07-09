@@ -14,8 +14,11 @@ export async function getAuthCredentials() {
   let secret = process.env.SESSION_SECRET;
 
   try {
-    // @ts-ignore — cloudflare:workers only exists inside workerd (dev & prod)
-    const { env } = await import("cloudflare:workers");
+    // @ts-ignore — cloudflare:workers only exists inside workerd (dev & prod).
+    // Specifier is concatenated at runtime so Vite's static import-analysis
+    // (client bundle) does not try to resolve the virtual module.
+    const workersModule = "cloudflare:" + "workers";
+    const { env } = await import(/* @vite-ignore */ workersModule);
     if (env?.ADMIN_USERNAME) username = env.ADMIN_USERNAME;
     if (env?.ADMIN_PASSWORD) password = env.ADMIN_PASSWORD;
     if (env?.ADMIN_PASSWORD_HASH) passwordHash = env.ADMIN_PASSWORD_HASH;

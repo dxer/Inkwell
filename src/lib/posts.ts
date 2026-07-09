@@ -179,6 +179,7 @@ export function parseFrontmatter(input: string): FrontmatterResult {
 export interface SyncPostInput {
   title?: string;
   slug?: string;
+  filename?: string; // 源文件名（如 my-post.md），无 meta slug 时用作 slug 回退
   content?: string; // Markdown 正文（不含 frontmatter）
   markdown?: string; // 含 YAML frontmatter 的原始 Markdown（Hugo / Hexo 典型格式）
   description?: string;
@@ -255,7 +256,11 @@ async function normalizeSyncPost(input: SyncPostInput): Promise<NormalizedPost> 
 
   if (!title) title = "无标题文章";
   if (!slug) {
-    slug = title
+    // slug 回退优先级：文件名（去扩展名）> 标题
+    const fileBase = input.filename
+      ? input.filename.replace(/\.(md|markdown)$/i, "")
+      : "";
+    slug = (fileBase || title)
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");

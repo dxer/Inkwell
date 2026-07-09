@@ -340,7 +340,7 @@ export const uploadAssetFn = createServerFn({ method: 'POST' })
 
 // ---------- API Key 管理（后台，需管理员登录） ----------
 
-async function requireAdmin() {
+export async function requireAdmin() {
   const { getCookie } = await import('@tanstack/react-start/server');
   const sessionToken = getCookie('inkwell_session');
   if (!sessionToken) throw new Error('未授权，请先登录');

@@ -2,13 +2,16 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { getDb } from '../lib/db'
 import { posts, categories, tags, postsToTags } from '../lib/schema'
-import { eq, and, desc, like, count } from 'drizzle-orm'
+import { eq, and, desc, like, count, inArray } from 'drizzle-orm'
 import { toast } from 'sonner'
-import { PenLine, RotateCcw, Trash2, Send, FileEdit, Eye } from 'lucide-react'
+import { PenLine, RotateCcw, Trash2, Send, FileEdit, Eye, X, FolderInput } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Separator } from '@/components/ui/separator'
+import { requireAdmin } from '../lib/functions'
 import {
   Table,
   TableBody,
@@ -55,6 +58,47 @@ export const deletePostPermanentlyFn = createServerFn({ method: 'POST' })
     // Junction table postsToTags has cascade onDelete, so deleting from posts is clean
     await db.delete(posts).where(eq(posts.id, data.id));
     return { success: true };
+  });
+
+// ---------------------------------------------------------------------------
+// Batch operations
+// ---------------------------------------------------------------------------
+
+export const batchUpdatePostStatusFn = createServerFn({ method: 'POST' })
+  .validator((data: { ids: string[]; status: 'draft' | 'published' | 'trash' }) => data)
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    if (!Array.isArray(data.ids) || data.ids.length === 0) return { success: true, count: 0 };
+    const db = await getDb();
+    await db
+      .update(posts)
+      .set({ status: data.status, updatedAt: new Date() })
+      .where(inArray(posts.id, data.ids));
+    return { success: true, count: data.ids.length };
+  });
+
+export const batchSetCategoryFn = createServerFn({ method: 'POST' })
+  .validator((data: { ids: string[]; categoryId: string | null }) => data)
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    if (!Array.isArray(data.ids) || data.ids.length === 0) return { success: true, count: 0 };
+    const db = await getDb();
+    await db
+      .update(posts)
+      .set({ categoryId: data.categoryId, updatedAt: new Date() })
+      .where(inArray(posts.id, data.ids));
+    return { success: true, count: data.ids.length };
+  });
+
+export const batchDeletePostsFn = createServerFn({ method: 'POST' })
+  .validator((data: { ids: string[] }) => data)
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    if (!Array.isArray(data.ids) || data.ids.length === 0) return { success: true, count: 0 };
+    const db = await getDb();
+    // cascade onDelete cleans up postsToTags junction rows
+    await db.delete(posts).where(inArray(posts.id, data.ids));
+    return { success: true, count: data.ids.length };
   });
 
 type PostsSearch = {
@@ -181,6 +225,7 @@ function AdminPostsIndex() {
   const [tag, setTag] = useState(filters.tag || "__all__");
 
   const goToPage = (next: number) => {
+    clearSelection();
     navigate({
       to: ".",
       search: {
@@ -195,6 +240,7 @@ function AdminPostsIndex() {
 
   const handleFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    clearSelection();
     navigate({
       to: ".",
       search: {
@@ -212,6 +258,7 @@ function AdminPostsIndex() {
     setStatus("all");
     setCategory("__all__");
     setTag("__all__");
+    clearSelection();
     navigate({ to: ".", search: {} });
   };
 
@@ -232,6 +279,75 @@ function AdminPostsIndex() {
       navigate({ to: "." });
     } catch (e: any) {
       toast.error("删除失败", { description: e.message });
+    }
+  };
+
+  // ---------- 批量操作 ----------
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchCategory, setBatchCategory] = useState<string>("");
+  const [confirmBatchDelete, setConfirmBatchDelete] = useState(false);
+
+  const selectedIds = () => Array.from(selected);
+  const clearSelection = () => setSelected(new Set());
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const allVisibleSelected = list.length > 0 && list.every((p) => selected.has(p.id));
+  const toggleSelectAll = () => {
+    setSelected((prev) => {
+      if (allVisibleSelected) {
+        const next = new Set(prev);
+        list.forEach((p) => next.delete(p.id));
+        return next;
+      }
+      const next = new Set(prev);
+      list.forEach((p) => next.add(p.id));
+      return next;
+    });
+  };
+
+  const handleBatchCategory = async () => {
+    if (!batchCategory) {
+      toast.error("请先选择一个分类");
+      return;
+    }
+    try {
+      const categoryId = batchCategory === "__none__" ? null : batchCategory;
+      const res = await batchSetCategoryFn({ data: { ids: selectedIds(), categoryId } });
+      toast.success(`已将 ${res.count} 篇文章${categoryId ? "添加到分类" : "移除分类"}`);
+      clearSelection();
+      setBatchCategory("");
+      navigate({ to: "." });
+    } catch (e: any) {
+      toast.error("操作失败", { description: e.message });
+    }
+  };
+
+  const handleBatchStatus = async (status: 'draft' | 'published' | 'trash') => {
+    try {
+      const res = await batchUpdatePostStatusFn({ data: { ids: selectedIds(), status } });
+      toast.success(`已更新 ${res.count} 篇文章状态`);
+      clearSelection();
+      navigate({ to: "." });
+    } catch (e: any) {
+      toast.error("操作失败", { description: e.message });
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    try {
+      const res = await batchDeletePostsFn({ data: { ids: selectedIds() } });
+      toast.success(`已永久删除 ${res.count} 篇文章`);
+      clearSelection();
+      setConfirmBatchDelete(false);
+      navigate({ to: "." });
+    } catch (e: any) {
+      toast.error("操作失败", { description: e.message });
     }
   };
 
@@ -307,13 +423,77 @@ function AdminPostsIndex() {
       {/* Posts Table */}
       <Card className="py-0">
         <CardContent className="p-0">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
-            <h3 className="text-sm font-semibold">文章列表（{pagination?.total ?? 0}）</h3>
+          <div className="flex flex-col gap-3 px-5 py-4 border-b border-border/40">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">文章列表（{pagination?.total ?? 0}）</h3>
+              {selected.size > 0 && (
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                >
+                  <X size={12} /> 取消选择（{selected.size}）
+                </button>
+              )}
+            </div>
+
+            {selected.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-primary">已选 {selected.size} 项</span>
+                <Separator orientation="vertical" className="h-5" />
+
+                <Select value={batchCategory} onValueChange={setBatchCategory}>
+                  <SelectTrigger className="w-[150px] h-8 text-xs">
+                    <SelectValue placeholder="选择分类…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {catList.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                    <SelectItem value="__none__">移除分类（不指定）</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button size="xs" variant="outline" onClick={handleBatchCategory}>
+                  <FolderInput size={12} /> 应用到分类
+                </Button>
+
+                <Separator orientation="vertical" className="h-5" />
+                <Button size="xs" variant="outline" onClick={() => handleBatchStatus('published')}>发布</Button>
+                <Button size="xs" variant="outline" onClick={() => handleBatchStatus('draft')}>转草稿</Button>
+                <Button size="xs" variant="outline" onClick={() => handleBatchStatus('trash')}>移入回收站</Button>
+
+                <Separator orientation="vertical" className="h-5" />
+                <AlertDialog open={confirmBatchDelete} onOpenChange={setConfirmBatchDelete}>
+                  <AlertDialogTrigger asChild>
+                    <Button size="xs" variant="destructive">永久删除</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>永久删除选中的 {selected.size} 篇文章？</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        这些文章将被彻底删除，此操作无法撤销。
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>取消</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleBatchDelete}>确认删除</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
           </div>
 
           <Table className="min-w-[860px]">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allVisibleSelected}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="全选当前页"
+                  />
+                </TableHead>
                 <TableHead>文章标题</TableHead>
                 <TableHead>分类</TableHead>
                 <TableHead>浏览量</TableHead>
@@ -325,13 +505,20 @@ function AdminPostsIndex() {
             <TableBody>
               {list.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-28 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="h-28 text-center text-muted-foreground">
                     没有找到符合条件的文章
                   </TableCell>
                 </TableRow>
               ) : (
                 list.map(post => (
-                  <TableRow key={post.id}>
+                  <TableRow key={post.id} data-selected={selected.has(post.id)} className={selected.has(post.id) ? "bg-primary/5" : ""}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selected.has(post.id)}
+                        onCheckedChange={() => toggleSelect(post.id)}
+                        aria-label={`选择 ${post.title || "(无标题)"}`}
+                      />
+                    </TableCell>
                     <TableCell className="max-w-[240px] md:max-w-[320px] font-medium">
                       <div className="overflow-x-auto no-scrollbar whitespace-nowrap scroll-smooth py-1" title={post.title || undefined}>
                         <Link to="/admin/posts/$id" params={{ id: post.id }} className="hover:text-primary transition-colors inline-block">

@@ -8,8 +8,11 @@ const DECODER = new TextDecoder();
 async function getSecretString(): Promise<string> {
   let s = process.env.AI_ENC_KEY;
   try {
-    // @ts-ignore - cloudflare:workers only exists inside workerd (dev & prod)
-    const { env } = await import("cloudflare:workers");
+    // @ts-ignore - cloudflare:workers only exists inside workerd (dev & prod).
+    // Specifier concatenated at runtime so Vite's client import-analysis
+    // does not try to resolve the virtual module.
+    const workersModule = "cloudflare:" + "workers";
+    const { env } = await import(/* @vite-ignore */ workersModule);
     if (env?.AI_ENC_KEY) s = env.AI_ENC_KEY;
   } catch {}
   if (!s) {
