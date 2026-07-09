@@ -32,6 +32,7 @@ hljs.registerLanguage("java", java);
 hljs.registerLanguage("yaml", yaml);
 
 // Map of common aliases to registered language names.
+// Only include aliases for languages that are actually registered above.
 const LANG_ALIASES: Record<string, string> = {
   js: "javascript",
   ts: "typescript",
@@ -41,7 +42,6 @@ const LANG_ALIASES: Record<string, string> = {
   zsh: "bash",
   yml: "yaml",
   py: "python",
-  rb: "ruby",
   rs: "rust",
   golang: "go",
   text: "",
@@ -90,8 +90,13 @@ export function highlightHtml(html: string): string {
       if (resolved && hljs.getLanguage(resolved)) {
         highlighted = hljs.highlight(code, { language: resolved }).value;
       } else {
-        // Auto-detect or fall back to plain escaped text
-        highlighted = hljs.highlightAuto(code).value;
+        // Language not recognized — output plain escaped text instead of
+        // highlightAuto(), which is too expensive for server-side use on
+        // large inputs (scans all registered languages).
+        highlighted = code
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
       }
     } catch {
       // On any error, return the original block untouched.

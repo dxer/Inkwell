@@ -2,6 +2,7 @@ import { getDb } from "./db";
 import { posts } from "./schema";
 import { eq } from "drizzle-orm";
 import { putAsset } from "./storage";
+import { generateId } from "./id";
 
 /** A model resolved from the DB with its (already decrypted) API key. */
 export interface ResolvedModel {
@@ -463,7 +464,7 @@ export async function generateCoverImage(
     throw new Error(msg);
   }
 
-  const key = `cover-${Date.now()}.png`;
+  const key = `cover-${generateId()}.png`;
 
   if (resultBuffer) {
     return await putAsset(key, resultBuffer, "image/png");

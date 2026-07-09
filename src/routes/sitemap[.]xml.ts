@@ -42,7 +42,7 @@ export const Route = createFileRoute("/sitemap.xml")({
   </url>
   ${activeCategories
     .map(
-      (c) => `
+      (c: any) => `
   <url>
     <loc>${baseUrl}/category/${c.slug}</loc>
     <changefreq>weekly</changefreq>
@@ -51,7 +51,7 @@ export const Route = createFileRoute("/sitemap.xml")({
     )
     .join("")}
   ${publishedPosts
-    .map((p) => {
+      .map((p: any) => {
       const date = new Date(p.updatedAt || p.createdAt || new Date());
       const isoDate = date.toISOString().split("T")[0];
       return `

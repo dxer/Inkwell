@@ -2,6 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { putAsset } from "../../lib/storage";
 import { generateId } from "../../lib/id";
 import { authenticateApiKey } from "../../lib/apikey";
+import { getDb } from "../../lib/db";
+import { apiKeys } from "../../lib/schema";
+import { eq } from "drizzle-orm";
 
 // Direct multipart upload endpoint — bypasses the TanStack server-function RPC
 // layer (which JSON-encodes payloads and chokes on large base64 bodies with
@@ -14,11 +17,21 @@ export const Route = createFileRoute("/api/upload")({
     handlers: {
       POST: async ({ request }: { request: Request }) => {
         try {
-          if (!(await authenticateApiKey(request))) {
+          const matched = await authenticateApiKey(request);
+          if (!matched) {
             return new Response(JSON.stringify({ error: "API Key 无效或未授权" }), {
               status: 401,
               headers: { "Content-Type": "application/json" },
             });
+          }
+
+          // Record usage time for the matched key.
+          {
+            const db = await getDb();
+            await db
+              .update(apiKeys)
+              .set({ lastUsedAt: new Date() })
+              .where(eq(apiKeys.id, matched.id));
           }
 
           const formData = await request.formData();

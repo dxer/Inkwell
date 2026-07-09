@@ -50,7 +50,7 @@ export const Route = createFileRoute("/feed.xml")({
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${baseUrl}/feed.xml" rel="self" type="application/rss+xml" />
     ${latestPosts
-      .map((p) => {
+      .map((p: any) => {
         const postLink = `${baseUrl}/posts/${p.slug}`;
         const postDate = new Date(p.createdAt || new Date()).toUTCString();
         return `

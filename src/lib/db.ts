@@ -24,11 +24,9 @@ export async function getDb() {
 
   // Add timeout protection to prevent blocking SSR stream
   const timeoutMs = 10000; // 10 second timeout for env resolution
-  let timedOut = false;
 
   const timeoutPromise = new Promise<any>((_, reject) => {
     setTimeout(() => {
-      timedOut = true;
       reject(new Error("getDb: cloudflare:workers env resolution timed out"));
     }, timeoutMs);
   });
@@ -52,9 +50,6 @@ export async function getDb() {
 
     return await Promise.race([dbPromise, timeoutPromise]);
   } catch (e) {
-    if (timedOut) {
-      console.error("getDb timed out, rethrowing error to trigger fallback");
-    }
     throw e;
   }
 }

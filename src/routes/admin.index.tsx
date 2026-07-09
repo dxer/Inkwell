@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { FileText, FileEdit, FileCheck, FolderTree, Tags, ArrowRight, PenLine, Settings, Eye, TrendingUp } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FileText, FileEdit, FileCheck, FolderTree, ArrowRight, PenLine, Settings, Eye, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getAdminStatsFn } from '../lib/functions'
 

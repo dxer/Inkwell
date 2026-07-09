@@ -10,7 +10,6 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   KeyRound,
   Bot,
 } from 'lucide-react'
@@ -53,7 +52,7 @@ const NAV_ITEMS = [
 
 function AdminLayout() {
   const navigate = useNavigate();
-  const { username } = Route.useLoaderData();
+  Route.useLoaderData();
   const [collapsed, setCollapsed] = useState(false);
 
   // Restore collapsed setting on mount

@@ -32,7 +32,7 @@ const DEFAULT_SETTINGS = [
 async function initDatabase(db: any) {
 	// D1-compatible SQL without IF NOT EXISTS for indexes
 	const statements = [
-		`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, slug TEXT NOT NULL, parent_id TEXT, sort_order INTEGER DEFAULT 0, color TEXT DEFAULT '#C15F3C' NOT NULL)`,
+		`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, slug TEXT NOT NULL, parent_id TEXT, sort_order INTEGER DEFAULT 0, color TEXT DEFAULT '#cc785c' NOT NULL)`,
 		`CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, slug TEXT NOT NULL, description TEXT, keywords TEXT, cover_image TEXT, content_blocks TEXT NOT NULL, content_html TEXT NOT NULL, category_id TEXT, status TEXT DEFAULT 'draft', views INTEGER DEFAULT 0 NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER)`,
 		`CREATE TABLE IF NOT EXISTS posts_to_tags (post_id TEXT, tag_id TEXT, PRIMARY KEY(post_id, tag_id))`,
 		`CREATE TABLE IF NOT EXISTS site_settings (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL, updated_at INTEGER)`,
@@ -293,8 +293,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html lang={lang} data-theme={isAdmin ? 'admin' : 'site'} suppressHydrationWarning>
       <head>
         <HeadContent />
-        {/* Google Analytics 4 — injected on the public site only, never in admin */}
-        {settings.google_analytics_id && !isAdmin && (
+        {/* Google Analytics 4 — injected on the public site only, never in admin.
+            The ID is validated against a strict charset so it can never break out
+            of the <script> context (no quotes / angle brackets / whitespace). */}
+        {settings.google_analytics_id && !isAdmin && /^[\w-]+$/.test(settings.google_analytics_id) && (
           <>
             <script async src={`https://www.googletagmanager.com/gtag/js?id=${settings.google_analytics_id}`} />
             <script>{`

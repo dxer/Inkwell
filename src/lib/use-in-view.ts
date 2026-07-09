@@ -12,9 +12,9 @@ import type { RefObject } from 'react'
  */
 export function useInView<T extends HTMLElement = HTMLDivElement>(
   options: { once?: boolean; threshold?: number } = {},
-): [RefObject<T>, boolean] {
+): [RefObject<T | null>, boolean] {
   const { once = true, threshold = 0.15 } = options
-  const ref = useRef<T>(null)
+  const ref = useRef<T | null>(null)
   const [inView, setInView] = useState(false)
 
   useEffect(() => {

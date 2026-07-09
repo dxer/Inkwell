@@ -36,14 +36,18 @@ async function resolveModel(modelId?: string, kind: 'text' | 'image' = 'text'): 
     row = (await db.select().from(aiModels).where(eq(aiModels.id, modelId)).limit(1))[0];
   }
   if (!row) {
+    // Fall back to the enabled (default) model for this kind.
     row = (await db.select().from(aiModels)
       .where(kind === 'text' ? eq(aiModels.isDefaultText, true) : eq(aiModels.isDefaultImage, true))
       .limit(1))[0];
   }
   if (!row) {
-    row = (await db.select().from(aiModels).limit(1))[0];
+    // Last resort: any model whose capabilities include the requested kind.
+    const all = await db.select().from(aiModels);
+    row = all.find((m: any) => (m.capabilities || '').includes(kind)) || null;
   }
   if (!row) {
+    // No model configured at all — use built-in Cloudflare defaults.
     return kind === 'image'
       ? { provider: 'cloudflare', modelId: '@cf/stabilityai/stable-diffusion-xl-base-1.0' }
       : { provider: 'cloudflare', modelId: '@cf/meta/llama-3.1-8b-instruct' };

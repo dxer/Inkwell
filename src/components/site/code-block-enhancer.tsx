@@ -8,6 +8,9 @@ import { useEffect } from "react";
  */
 export function CodeBlockEnhancer({ html }: { html: string }) {
   useEffect(() => {
+    const root = document.querySelector(".prose-reader");
+    if (!root) return;
+
     const handler = (e: Event) => {
       const target = e.target as HTMLElement;
       const btn = target.closest(".copy-code-btn") as HTMLButtonElement | null;
@@ -45,8 +48,8 @@ export function CodeBlockEnhancer({ html }: { html: string }) {
       }
     };
 
-    document.addEventListener("click", handler, true);
-    return () => document.removeEventListener("click", handler, true);
+    root.addEventListener("click", handler);
+    return () => root.removeEventListener("click", handler);
   }, [html]);
 
   return null;

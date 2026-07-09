@@ -91,17 +91,6 @@ export async function getAdminSessionFromRequest(request: Request): Promise<any 
   return await verifySession(sessionToken, secret);
 }
 
-export async function createSessionCookieString(username: string): Promise<string> {
-  const { secret } = await getAuthCredentials();
-  const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
-  const token = await signSession({ username, expiresAt }, secret);
-  
-  // Returns Set-Cookie value
-  return `inkwell_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${
-    process.env.NODE_ENV !== "development" ? "; Secure" : ""
-  }`;
-}
-
 export function destroySessionCookieString(): string {
   return `inkwell_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 }

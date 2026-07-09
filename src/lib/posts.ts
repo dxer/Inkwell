@@ -8,15 +8,17 @@ import { posts, categories, tags, postsToTags } from "./schema";
 import { eq } from "drizzle-orm";
 import { checkSlugUnique } from "./ai";
 import { generateId } from "./id";
+import { sanitizeMarkdownHtml } from "./sanitize";
 
 const MARKED_OPTIONS = { gfm: true, breaks: true } as const;
 
-// 将 Markdown 编译为前台渲染用的 HTML
+// 将 Markdown 编译为前台渲染用的 HTML（经 sanitize 防 XSS）
 export function compileMarkdown(markdown: string): string {
   try {
-    return marked.parse(markdown || "", MARKED_OPTIONS) as string;
+    const raw = marked.parse(markdown || "", MARKED_OPTIONS) as string;
+    return sanitizeMarkdownHtml(raw);
   } catch {
-    return `<p>${markdown || ""}</p>`;
+    return sanitizeMarkdownHtml(`<p>${markdown || ""}</p>`);
   }
 }
 

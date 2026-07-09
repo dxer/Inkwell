@@ -6,11 +6,9 @@ export async function putAsset(key: string, fileData: ArrayBuffer, mimeType: str
 
   // Add timeout protection to prevent blocking SSR stream
   const timeoutMs = 15000; // 15 second timeout for R2 operations
-  let timedOut = false;
 
   const timeoutPromise = new Promise<string>((resolve) => {
     setTimeout(() => {
-      timedOut = true;
       // Fall back to data URL on timeout
       const base64 = Buffer.from(fileData).toString("base64");
       resolve(`data:${mimeType};base64,${base64}`);
@@ -48,13 +46,15 @@ export async function getAsset(key: string): Promise<{ data: Uint8Array; mimeTyp
   // 1. Try Cloudflare R2 first (works in both local workerd dev and production)
   const workersModule = "cloudflare:" + "workers";
 
+  // Guard: the filesystem fallback below joins this key into a path. Reject any
+  // key that could traverse out of the intended directory (unauthenticated route).
+  if (/[/\\]|\.\./.test(key)) return null;
+
   // Add timeout protection to prevent blocking SSR stream
   const timeoutMs = 10000; // 10 second timeout for R2 operations
-  let timedOut = false;
 
   const timeoutPromise = new Promise<null>((resolve) => {
     setTimeout(() => {
-      timedOut = true;
       console.warn(`getAsset(${key}) timed out, falling through to filesystem`);
       resolve(null);
     }, timeoutMs);
